@@ -6,6 +6,7 @@
   "description": "PWA affichant la température de l'eau du lac Léman.",
   "scripts": {
     "test": "node tools/test-parsers.mjs",
+    "data": "node tools/build-model-data.mjs",
     "check": "node tools/check-sources.mjs",
     "icons": "python3 tools/make-icons.py",
     "serve": "python3 -m http.server 4173"

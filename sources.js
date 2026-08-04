@@ -103,6 +103,38 @@ export function urlModelPoint(spot, start, end) {
        + `/${stampUTC(start)}/${stampUTC(end)}/${CFG.depth}/${spot.lat}/${spot.lon}`;
 }
 
+// Instantané précalculé par la CI, servi depuis la même origine que la page.
+// Chemin relatif : l'app fonctionne aussi sous un sous-répertoire (GitHub Pages).
+export const urlModelSnapshot = () => 'data/model.json';
+
+/* ------------------------------------------------- analyse de l'instantané */
+
+// Extrait la série d'un lieu de l'instantané : { t: [...ISO], v: [...°C] }.
+export function parseSnapshot(raw, spotKey) {
+  const entry = pick(raw?.spots, spotKey);
+  const times = pick(entry, 't', 'time', 'times') || [];
+  const values = pick(entry, 'v', 'values', 'data') || [];
+
+  const points = [];
+  const n = Math.min(times.length, values.length);
+  for (let i = 0; i < n; i++) {
+    const at = toDate(times[i]);
+    if (values[i] == null || values[i] === '') continue;
+    const v = Number(values[i]);
+    if (!at || !plausible(v)) continue;
+    points.push({ at, value: v });
+  }
+  points.sort((a, b) => a.at - b.at);
+  return points;
+}
+
+// Âge de l'instantané, pour signaler une CI en panne plutôt qu'afficher
+// silencieusement des valeurs figées.
+export function snapshotAge(raw, now = Date.now()) {
+  const at = toDate(raw?.generatedAt);
+  return at ? now - at.getTime() : null;
+}
+
 /* ------------------------------------------------------------- analyse existenz */
 
 export function parseStationMeta(raw) {

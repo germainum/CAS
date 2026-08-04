@@ -3,7 +3,7 @@
 // Les données météo/hydro passent par le réseau et sont mises en cache
 // côté application (localStorage), avec leur horodatage.
 
-const CACHE = 'leman-shell-v1';
+const CACHE = 'leman-shell-v2';
 
 const SHELL = [
   './',
@@ -42,6 +42,20 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;   // API : réseau direct
+
+  // Données du modèle : réseau d'abord, sinon le dernier instantané en cache.
+  // Les servir depuis le cache en priorité figerait la température affichée.
+  if (url.pathname.endsWith('/data/model.json')) {
+    event.respondWith(
+      fetch(request)
+        .then((res) => {
+          if (res && res.ok) caches.open(CACHE).then((c) => c.put(request, res.clone()));
+          return res;
+        })
+        .catch(() => caches.match(request).then((c) => c || Response.error()))
+    );
+    return;
+  }
 
   // Coque : réponse immédiate depuis le cache, mise à jour en arrière-plan.
   event.respondWith(

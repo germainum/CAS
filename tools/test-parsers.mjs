@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 
 import {
   CFG, SPOTS, advice, asArray, bestReading, distanceKm, isStale, parseMeasuredStations,
-  parseSeries, parseStationMeta, stampUTC, toDate, urlModelPoint,
+  parseSeries, parseSnapshot, parseStationMeta, snapshotAge, stampUTC, toDate, urlModelPoint,
 } from '../sources.js';
 
 let passed = 0;
@@ -217,6 +217,47 @@ test('une réponse vide ou inattendue donne une série vide, sans lever', () => 
   assert.deepEqual(parseSeries({}), []);
   assert.deepEqual(parseSeries({ detail: 'Not Found' }), []);
   assert.deepEqual(parseSeries({ time: ['2026-08-04T12:00:00Z'], variables: {} }), []);
+});
+
+console.log('\ninstantané précalculé par la CI');
+
+const SNAPSHOT = {
+  generatedAt: '2026-08-04T11:17:00Z',
+  unit: 'degC',
+  spots: {
+    lausanne: { t: ['2026-08-04T09:00:00Z', '2026-08-04T12:00:00Z'], v: [25.1, 25.4] },
+    vevey: { t: ['2026-08-04T09:00:00Z'], v: [24.8] },
+  },
+};
+
+test('parseSnapshot extrait la série du lieu demandé', () => {
+  const pts = parseSnapshot(SNAPSHOT, 'lausanne');
+  assert.deepEqual(pts.map((p) => p.value), [25.1, 25.4]);
+  assert.equal(pts[0].at.toISOString(), '2026-08-04T09:00:00.000Z');
+});
+
+test('parseSnapshot renvoie une série vide pour un lieu absent', () => {
+  assert.deepEqual(parseSnapshot(SNAPSHOT, 'yvoire'), []);
+  assert.deepEqual(parseSnapshot({}, 'lausanne'), []);
+  assert.deepEqual(parseSnapshot(null, 'lausanne'), []);
+});
+
+test('parseSnapshot ignore les trous et trie la série', () => {
+  const pts = parseSnapshot({
+    spots: { x: { t: ['2026-08-04T12:00:00Z', '2026-08-04T09:00:00Z', '2026-08-04T10:00:00Z'], v: [25.4, null, 999] } },
+  }, 'x');
+  assert.deepEqual(pts.map((p) => p.value), [25.4]);
+});
+
+test('snapshotAge mesure la fraîcheur de l’instantané', () => {
+  assert.equal(snapshotAge(SNAPSHOT, Date.parse('2026-08-04T12:17:00Z')), 3600 * 1000);
+  assert.equal(snapshotAge({}, NOW), null);
+});
+
+test('chaque lieu de SPOTS a une clé unique — l’instantané est indexé dessus', () => {
+  const keys = SPOTS.map((s) => s.key);
+  assert.equal(new Set(keys).size, keys.length);
+  assert.ok(keys.every((k) => /^[a-z]+$/.test(k)), 'clés utilisables comme noms de champs JSON');
 });
 
 console.log('\nchoix de la valeur affichée');
