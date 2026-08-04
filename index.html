@@ -6,77 +6,81 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="La température de l'eau du lac Léman, lieu par lieu, sur votre iPhone.">
 
-<meta name="theme-color" content="#0b4f7a" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#05253d" media="(prefers-color-scheme: dark)">
-<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#f2f5f9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0a0e13" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
 
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Léman">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="icon" href="icons/favicon-32.png" sizes="32x32">
 
 <link rel="stylesheet" href="app.css">
 </head>
-<body>
+<body data-band="unknown">
+
+<div class="wash" aria-hidden="true"></div>
 
 <div class="app">
 
-  <header class="top">
-    <h1 class="brand">Lac Léman</h1>
-    <button id="refresh" class="icon-btn" type="button" aria-label="Actualiser">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v4h-4"/></svg>
-    </button>
-  </header>
+  <!-- Premier écran : l'affirmation, puis la lecture chiffrée. -->
+  <section class="screen">
 
-  <nav class="spots" id="spots" aria-label="Choisir un lieu"></nav>
+    <header class="top">
+      <svg class="mark" viewBox="0 0 44 30" role="img" aria-label="Lac Léman">
+        <path d="M2 9c5-5 9-5 14 0s9 5 14 0 9-5 12-2"/>
+        <path d="M2 19c5-5 9-5 14 0s9 5 14 0 9-5 12-2"/>
+      </svg>
+      <button id="refresh" class="ghost" type="button" aria-label="Actualiser">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v4h-4"/></svg>
+      </button>
+    </header>
 
-  <main>
-    <section class="card hero" aria-live="polite">
-      <p class="hero-place" id="heroPlace">…</p>
-      <p class="hero-temp"><span id="heroValue" class="hero-value">--</span><span class="hero-unit">°C</span></p>
-      <p class="hero-meta">
-        <span class="badge" id="heroBadge">chargement</span>
-        <span class="age" id="heroAge"></span>
+    <div class="statement" aria-live="polite">
+      <h1 id="statement">L'eau est <em id="adjective">inconnue</em>.</h1>
+      <p class="aside" id="aside">Récupération des données…</p>
+    </div>
+
+    <div class="readout">
+      <p class="readout-label">
+        <span id="readoutPlace">—</span>
+        <span id="readoutSource" class="readout-source"></span>
       </p>
-      <p class="hero-advice" id="heroAdvice">Récupération des données…</p>
-    </section>
+      <p class="readout-value"><span id="value">--</span><span class="degree">°</span></p>
+    </div>
 
-    <section class="card" id="chartCard">
-      <div class="card-head">
-        <h2>Évolution</h2>
-        <span class="hint" id="chartHint">modèle Eawag</span>
-      </div>
-      <div class="chart" id="chart"></div>
-      <p class="chart-legend">
-        <span class="key key-past"></span> simulé
-        <span class="key key-future"></span> prévision
-      </p>
-    </section>
+    <nav class="places" id="places" aria-label="Choisir un lieu"></nav>
+  </section>
 
-    <section class="card" id="stationsCard">
-      <div class="card-head">
-        <h2>Stations de mesure</h2>
-        <span class="hint">OFEV</span>
-      </div>
-      <ul class="stations" id="stations"></ul>
-    </section>
+  <!-- Détails, sous la ligne de flottaison. -->
+  <section class="block">
+    <h2 class="micro">Sept jours <span id="chartHint" class="micro-note">modèle Eawag</span></h2>
+    <div class="chart" id="chart"></div>
+    <p class="micro-note legend">
+      <span class="key"></span>simulé<span class="key key-future"></span>prévision
+    </p>
+  </section>
 
-    <footer class="foot">
-      <p class="sources">
-        Données&nbsp;: <a href="https://www.hydrodaten.admin.ch/" target="_blank" rel="noopener">OFEV</a>
-        via <a href="https://api.existenz.ch/" target="_blank" rel="noopener">existenz.ch</a>,
-        simulation <a href="https://www.alplakes.eawag.ch/" target="_blank" rel="noopener">Alplakes&nbsp;/&nbsp;Eawag</a>.
-      </p>
-      <p class="sources">Les indications de baignade n'ont aucune valeur officielle.</p>
-      <details class="diag">
-        <summary>Diagnostic des sources</summary>
-        <pre id="diagOut">—</pre>
-      </details>
-    </footer>
-  </main>
+  <section class="block">
+    <h2 class="micro">Stations de mesure <span class="micro-note">OFEV</span></h2>
+    <ul class="stations" id="stations"></ul>
+  </section>
+
+  <footer class="block foot">
+    <p class="micro-note">
+      <a href="https://www.hydrodaten.admin.ch/" target="_blank" rel="noopener">OFEV</a>
+      via <a href="https://api.existenz.ch/" target="_blank" rel="noopener">existenz.ch</a>,
+      simulation <a href="https://www.alplakes.eawag.ch/" target="_blank" rel="noopener">Alplakes&nbsp;/&nbsp;Eawag</a>.
+      Indications de baignade sans valeur officielle.
+    </p>
+    <details class="diag">
+      <summary class="micro-note">Diagnostic des sources</summary>
+      <pre id="diagOut">—</pre>
+    </details>
+  </footer>
 
   <div class="install" id="install" hidden>
     <p>Ajoutez l'app à votre écran d'accueil&nbsp;: <b>Partager</b> → <b>Sur l'écran d'accueil</b>.</p>
