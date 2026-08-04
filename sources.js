@@ -12,6 +12,9 @@ export const CFG = {
   futureDays: 2,
   nearStationKm: 12,     // au-delà, une station cesse de représenter le lieu choisi
   staleAfterMs: 6 * 3600 * 1000,
+  // Les métadonnées de stations changent rarement, mais une version incomplète ne
+  // doit pas s'installer pour une semaine : un jour suffit à limiter les dégâts.
+  metaCacheMs: 24 * 3600 * 1000,
   timeoutMs: 12000,
   autoRefreshMs: 15 * 60 * 1000,
   // Emprise du Léman, volontairement large : sert à isoler les stations du lac.

@@ -104,9 +104,17 @@ function cacheGet(key, maxAgeMs = Infinity) {
 /* ----------------------------------------------------------------- fetchers */
 
 // Métadonnées des stations (nom, cours d'eau, coordonnées) : stables, cachées une semaine.
+const geolocated = (meta) => Object.values(meta).filter((m) => m.lat != null).length;
+
 async function fetchStationMeta() {
-  const cached = cacheGet('stationMeta', 7 * 24 * 3600 * 1000);
-  if (cached) return cached;
+  const cached = cacheGet('stationMeta', CFG.metaCacheMs);
+  if (cached) {
+    // Journalisé même depuis le cache : l'absence de cette ligne masquait le fait
+    // que des métadonnées sans coordonnées restaient en place des jours.
+    note('métadonnées (cache)', geolocated(cached) > 0,
+      `${Object.keys(cached).length} stations, ${geolocated(cached)} géolocalisées`);
+    return cached;
+  }
 
   for (const path of ['/locations', '/stations']) {
     try {
@@ -114,8 +122,9 @@ async function fetchStationMeta() {
       const meta = parseStationMeta(raw);
       if (meta) {
         cacheSet('stationMeta', meta);
-        const located = Object.values(meta).filter((m) => m.lat != null).length;
-        note('existenz' + path, true, `${Object.keys(meta).length} stations, ${located} géolocalisées`);
+        const located = geolocated(meta);
+        note('existenz' + path, located > 0,
+          `${Object.keys(meta).length} stations, ${located} géolocalisées`);
         return meta;
       }
       // Réponse reçue mais illisible : le nombre d'entrées lues situe le problème.
