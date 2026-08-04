@@ -572,3 +572,30 @@ body {
 
 /* Pendant l'immersion, la page derrière ne défile pas. */
 body.timing { overflow: hidden; }
+
+/* ------------------------------------------------------------- balayage */
+
+/* Le contenu entre depuis le côté d'où vient le geste. Le déplacement reste
+   discret : c'est un repère de direction, pas une transition spectaculaire. */
+@keyframes enter-from-right {
+  from { opacity: 0; transform: translateX(22px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes enter-from-left {
+  from { opacity: 0; transform: translateX(-22px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.enter-next { animation: enter-from-right 260ms cubic-bezier(.22, .61, .36, 1); }
+.enter-prev { animation: enter-from-left 260ms cubic-bezier(.22, .61, .36, 1); }
+
+@media (prefers-reduced-motion: reduce) {
+  .enter-next, .enter-prev { animation: none; }
+}
+
+/* Le geste ne doit pas sélectionner le texte du titre au passage. */
+.statement h1, .readout-value {
+  -webkit-user-select: none;
+  user-select: none;
+}

@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 
 import {
   BATH_MAX_MINUTES, CFG, SPOTS, asArray, bathPhase, bathPlan, bestReading, distanceKm,
-  formatClock, isStale, mood, parseMeasuredStations,
+  formatClock, isStale, mood, nextIndex, parseMeasuredStations, swipeDecision,
   parseSeries, parseSnapshot, parseStationMeta, snapshotAge, stampUTC, toDate, urlModelPoint,
 } from '../sources.js';
 
@@ -468,6 +468,40 @@ test('une valeur absente donne une bande neutre, pas une erreur', () => {
     assert.equal(mood(bad).band, 'unknown');
     assert.equal(mood(bad).adj, 'inconnue');
   }
+});
+
+console.log('\nbalayage entre les lieux');
+
+test('un balayage franc vers la gauche va au lieu suivant', () => {
+  assert.equal(swipeDecision(-120, 8, 220), 'next');
+  assert.equal(swipeDecision(120, -8, 220), 'prev');
+});
+
+test('un geste trop court n’est qu’une touche', () => {
+  assert.equal(swipeDecision(-20, 2, 120), null);
+  assert.equal(swipeDecision(44, 0, 120), null);
+  assert.equal(swipeDecision(46, 0, 120), 'prev');
+});
+
+test('un geste vertical reste un défilement, jamais un balayage', () => {
+  assert.equal(swipeDecision(-60, 200, 300), null, 'défilement vers le bas');
+  assert.equal(swipeDecision(-60, -200, 300), null, 'défilement vers le haut');
+  // En diagonale, l'horizontale doit dominer nettement.
+  assert.equal(swipeDecision(-100, 70, 300), null);
+  assert.equal(swipeDecision(-100, 50, 300), 'next');
+});
+
+test('un geste lent doit être plus ample pour compter', () => {
+  assert.equal(swipeDecision(-60, 0, 1500), null, 'lent et court : hésitation');
+  assert.equal(swipeDecision(-120, 0, 1500), 'next', 'lent mais franc : intention');
+});
+
+test('les extrémités bornent le déplacement au lieu de boucler', () => {
+  assert.equal(nextIndex(0, 'prev', 10), 0, 'premier lieu : on y reste');
+  assert.equal(nextIndex(9, 'next', 10), 9, 'dernier lieu : on y reste');
+  assert.equal(nextIndex(4, 'next', 10), 5);
+  assert.equal(nextIndex(4, 'prev', 10), 3);
+  assert.equal(nextIndex(4, null, 10), 4);
 });
 
 console.log('\nbain froid : durée conseillée');

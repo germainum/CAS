@@ -10,9 +10,9 @@
 
 import { initBath, setWaterTemperature } from './bath.js';
 import {
-  CFG, SPOTS, asArray, bestReading, isStale, mood, parseMeasuredStations, parseSeries,
-  parseSnapshot, parseStationMeta, snapshotAge, toDate, urlLatestTemperature,
-  urlModelPoint, urlModelSnapshot, urlStationMeta,
+  CFG, SPOTS, asArray, bestReading, isStale, mood, nextIndex, parseMeasuredStations,
+  parseSeries, parseSnapshot, parseStationMeta, snapshotAge, swipeDecision, toDate,
+  urlLatestTemperature, urlModelPoint, urlModelSnapshot, urlStationMeta,
 } from './sources.js';
 
 const $ = (id) => document.getElementById(id);
@@ -388,12 +388,69 @@ function paintFromCache() {
   return true;
 }
 
-function selectSpot(spot) {
+function selectSpot(spot, direction = null) {
+  if (spot.key === currentSpot.key) return;
   currentSpot = spot;
   cacheSet('spot', spot.key);
   markSelectedChip();
   paintFromCache();
   refresh({ silent: true });
+  if (direction) animateSwap(direction);
+}
+
+// Le contenu entre depuis le côté d'où vient le geste : sans ce repère visuel,
+// un balayage ne se distingue pas d'un rafraîchissement.
+function animateSwap(direction) {
+  const cls = direction === 'next' ? 'enter-next' : 'enter-prev';
+  for (const el of document.querySelectorAll('.statement, .readout')) {
+    el.classList.remove('enter-next', 'enter-prev');
+    // Forcer un recalcul relance l'animation même sur deux balayages successifs.
+    void el.offsetWidth;
+    el.classList.add(cls);
+    el.addEventListener('animationend', () => el.classList.remove(cls), { once: true });
+  }
+}
+
+function moveSpot(direction) {
+  const from = SPOTS.findIndex((s) => s.key === currentSpot.key);
+  const to = nextIndex(from, direction, SPOTS.length);
+  if (to !== from) selectSpot(SPOTS[to], direction);
+}
+
+/* ------------------------------------------------------------ balayage */
+
+// Balayage horizontal sur le premier écran. Événements pointeur : ils couvrent
+// le doigt comme la souris, et le navigateur émet pointercancel dès qu'il prend
+// le geste pour un défilement — ce qui suffit à ne jamais lui disputer la page.
+function enableSwipe() {
+  const screen = document.querySelector('.screen');
+  let start = null;
+
+  screen.addEventListener('pointerdown', (e) => {
+    // Le sélecteur de lieux défile horizontalement pour son propre compte,
+    // et les commandes gardent la priorité sur le geste.
+    if (e.target.closest('.places, button, a')) return;
+    if (!e.isPrimary) return;
+    start = { x: e.clientX, y: e.clientY, at: Date.now() };
+  });
+
+  const finish = (e) => {
+    if (!start) return;
+    const decision = swipeDecision(e.clientX - start.x, e.clientY - start.y, Date.now() - start.at);
+    start = null;
+    if (decision) moveSpot(decision);
+  };
+
+  screen.addEventListener('pointerup', finish);
+  screen.addEventListener('pointercancel', () => { start = null; });
+  screen.addEventListener('pointerleave', () => { start = null; });
+
+  // Au clavier, les flèches font le même travail.
+  document.addEventListener('keydown', (e) => {
+    if (e.target.closest('input, textarea')) return;
+    if (e.key === 'ArrowRight') moveSpot('next');
+    else if (e.key === 'ArrowLeft') moveSpot('prev');
+  });
 }
 
 /* ------------------------------------------------------ iOS & cycle de vie */
@@ -430,6 +487,7 @@ function init() {
   window.addEventListener('online', () => refresh({ silent: true }));
   setInterval(() => { if (!document.hidden) refresh({ silent: true }); }, CFG.autoRefreshMs);
 
+  enableSwipe();
   initBath();
   maybeShowInstallHint();
 
