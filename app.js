@@ -1,0 +1,362 @@
+// Température du Léman — réseau, cache et rendu.
+//
+// Deux sources complémentaires :
+//   1. existenz.ch      → mesures in situ des stations hydrologiques de l'OFEV.
+//   2. Alplakes / Eawag → simulation 3D du lac (Delft3D-FLOW) : une valeur pour
+//                         n'importe quel point d'eau, plus l'historique et la
+//                         prévision qui alimentent la courbe.
+// Toute réponse utile est mise en cache (localStorage) : l'app affiche donc
+// toujours quelque chose, hors ligne compris, en signalant l'âge de la donnée.
+
+import {
+  CFG, SPOTS, advice, bestReading, isStale, parseMeasuredStations, parseSeries,
+  parseStationMeta, toDate, urlLatestTemperature, urlModelPoint, urlStationMeta,
+} from './sources.js';
+
+const $ = (id) => document.getElementById(id);
+const diagnostics = [];
+let currentSpot = SPOTS[0];
+let refreshing = false;
+
+/* ------------------------------------------------------------------ affichage */
+
+const formatTemp = (v) =>
+  typeof v === 'number' && isFinite(v) ? v.toFixed(1).replace('.', ',') : '--';
+
+function formatAge(value) {
+  const date = toDate(value);
+  if (!date) return '';
+  const min = Math.round((Date.now() - date.getTime()) / 60000);
+  if (min < 0) return 'prévision';
+  if (min < 2) return "à l'instant";
+  if (min < 60) return `il y a ${min} min`;
+  const h = Math.round(min / 60);
+  if (h < 24) return `il y a ${h} h`;
+  const d = Math.round(h / 24);
+  return d === 1 ? 'hier' : `il y a ${d} jours`;
+}
+
+function note(source, ok, detail) {
+  const time = new Date().toLocaleTimeString('fr-CH', { hour: '2-digit', minute: '2-digit' });
+  diagnostics.push(`${ok ? '✓' : '✗'} ${time} ${source} — ${detail}`);
+  $('diagOut').textContent = diagnostics.slice(-14).join('\n');
+}
+
+function toast(msg) {
+  const el = $('toast');
+  el.textContent = msg;
+  el.hidden = false;
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => { el.hidden = true; }, 2600);
+}
+
+/* -------------------------------------------------------------------- réseau */
+
+async function getJSON(url) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), CFG.timeoutMs);
+  try {
+    const res = await fetch(url, { signal: ctrl.signal, headers: { Accept: 'application/json' } });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    throw new Error(err.name === 'AbortError' ? 'délai dépassé' : err.message);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/* --------------------------------------------------------------------- cache */
+
+const PREFIX = 'leman.v1.';
+
+function cacheSet(key, value) {
+  try {
+    localStorage.setItem(PREFIX + key, JSON.stringify({ savedAt: Date.now(), value }));
+  } catch { /* quota ou navigation privée : le cache est un bonus, pas une dépendance */ }
+}
+
+function cacheGet(key, maxAgeMs = Infinity) {
+  try {
+    const raw = localStorage.getItem(PREFIX + key);
+    if (!raw) return null;
+    const { savedAt, value } = JSON.parse(raw);
+    return Date.now() - savedAt > maxAgeMs ? null : value;
+  } catch {
+    return null;
+  }
+}
+
+/* ----------------------------------------------------------------- fetchers */
+
+// Métadonnées des stations (nom, cours d'eau, coordonnées) : stables, cachées une semaine.
+async function fetchStationMeta() {
+  const cached = cacheGet('stationMeta', 7 * 24 * 3600 * 1000);
+  if (cached) return cached;
+
+  for (const path of ['/locations', '/stations']) {
+    try {
+      const meta = parseStationMeta(await getJSON(urlStationMeta(path)));
+      if (meta) {
+        cacheSet('stationMeta', meta);
+        note('existenz' + path, true, `${Object.keys(meta).length} stations`);
+        return meta;
+      }
+      note('existenz' + path, false, 'aucune station exploitable');
+    } catch (err) {
+      note('existenz' + path, false, err.message);
+    }
+  }
+  return null;
+}
+
+async function fetchMeasuredStations() {
+  const raw = await getJSON(urlLatestTemperature());
+  const meta = await fetchStationMeta();
+  const list = parseMeasuredStations(raw, meta);
+  note('existenz/latest', true, `${list.length} station(s) sur le Léman`);
+  return list;
+}
+
+async function fetchModelSeries(spot) {
+  const now = Date.now();
+  const url = urlModelPoint(
+    spot,
+    new Date(now - CFG.pastDays * 86400000),
+    new Date(now + CFG.futureDays * 86400000),
+  );
+  const points = parseSeries(await getJSON(url));
+  if (!points.length) throw new Error('série vide');
+  note('alplakes', true, `${spot.name} : ${points.length} points`);
+  return points;
+}
+
+/* ----------------------------------------------------------------- rendu UI */
+
+function renderSpots() {
+  $('spots').replaceChildren(...SPOTS.map((spot) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip';
+    b.textContent = spot.name;
+    b.setAttribute('role', 'tab');
+    b.addEventListener('click', () => selectSpot(spot));
+    return b;
+  }));
+}
+
+function markSelectedChip() {
+  [...$('spots').children].forEach((b, i) => {
+    const selected = SPOTS[i].key === currentSpot.key;
+    b.setAttribute('aria-selected', String(selected));
+    if (selected) b.scrollIntoView({ inline: 'center', block: 'nearest' });
+  });
+}
+
+function renderHero({ value, at, kind, label }) {
+  $('heroPlace').textContent = currentSpot.sub
+    ? `${currentSpot.name} · ${currentSpot.sub}`
+    : currentSpot.name;
+  $('heroValue').textContent = formatTemp(value);
+
+  const badge = $('heroBadge');
+  badge.className = `badge ${kind || ''}`;
+  badge.textContent = label;
+
+  $('heroAge').textContent = formatAge(at);
+  $('heroAdvice').textContent = value == null
+    ? 'Aucune donnée disponible pour le moment.'
+    : advice(value);
+  document.querySelector('.hero').classList.toggle('stale', value != null && isStale(at));
+}
+
+function renderStations(list) {
+  const ul = $('stations');
+  if (!list || !list.length) {
+    const li = document.createElement('li');
+    li.className = 'st-empty';
+    li.textContent = 'Mesures officielles indisponibles (voir le diagnostic).';
+    ul.replaceChildren(li);
+    return;
+  }
+  ul.replaceChildren(...list.map((s) => {
+    const li = document.createElement('li');
+    const name = document.createElement('span');
+    name.className = 'st-name';
+    name.textContent = s.name;
+
+    const sub = document.createElement('span');
+    sub.className = 'st-sub';
+    sub.textContent = [s.water, formatAge(s.at)].filter(Boolean).join(' · ');
+    name.append(sub);
+
+    const val = document.createElement('span');
+    val.className = 'st-val';
+    val.textContent = `${formatTemp(s.value)} °C`;
+
+    li.append(name, val);
+    return li;
+  }));
+}
+
+function renderChart(points) {
+  const box = $('chart');
+  const W = 320, H = 150, padL = 26, padR = 8, padT = 12, padB = 20;
+
+  if (!points || points.length < 2) {
+    box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Courbe indisponible">`
+      + `<text class="empty" x="${W / 2}" y="${H / 2}" text-anchor="middle">Courbe indisponible</text>`
+      + '</svg>';
+    return;
+  }
+
+  const values = points.map((p) => p.value);
+  const t0 = points[0].at.getTime();
+  const t1 = points[points.length - 1].at.getTime();
+  const lo = Math.floor(Math.min(...values) - 0.6);
+  const hi = Math.ceil(Math.max(...values) + 0.6);
+  const x = (t) => padL + ((t - t0) / Math.max(1, t1 - t0)) * (W - padL - padR);
+  const y = (v) => padT + (1 - (v - lo) / Math.max(0.5, hi - lo)) * (H - padT - padB);
+  const path = (pts) => pts
+    .map((p, i) => `${i ? 'L' : 'M'}${x(p.at.getTime()).toFixed(1)},${y(p.value).toFixed(1)}`)
+    .join('');
+
+  const now = Date.now();
+  const past = points.filter((p) => p.at.getTime() <= now);
+  const future = points.filter((p) => p.at.getTime() >= now);
+
+  const grid = [lo, (lo + hi) / 2, hi].map((v) =>
+    `<line class="grid" x1="${padL}" y1="${y(v).toFixed(1)}" x2="${W - padR}" y2="${y(v).toFixed(1)}"/>`
+    + `<text class="axis" x="0" y="${(y(v) + 3).toFixed(1)}">${Math.round(v)}°</text>`).join('');
+
+  const days = [];
+  for (const d = new Date(t0); d.getTime() <= t1; d.setDate(d.getDate() + 1)) {
+    const midnight = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    if (midnight <= t0 || midnight >= t1) continue;
+    days.push(`<text class="axis" x="${x(midnight).toFixed(1)}" y="${H - 4}" text-anchor="middle">`
+      + `${new Date(midnight).toLocaleDateString('fr-CH', { weekday: 'short' })}</text>`);
+  }
+
+  const marker = past.length ? past[past.length - 1] : points[0];
+
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img"`
+    + ` aria-label="Température de l'eau sur ${CFG.pastDays + CFG.futureDays} jours">`
+    + grid + days.join('')
+    + (past.length > 1 ? `<path class="line" d="${path(past)}"/>` : '')
+    + (future.length > 1 ? `<path class="line line-future" d="${path(future)}"/>` : '')
+    + `<circle class="now" cx="${x(marker.at.getTime()).toFixed(1)}" cy="${y(marker.value).toFixed(1)}" r="3.5"/>`
+    + '</svg>';
+}
+
+/* ----------------------------------------------------------- orchestration */
+
+const reviveSeries = (raw) => (raw || [])
+  .map((p) => ({ at: new Date(p.at), value: p.value }))
+  .filter((p) => !isNaN(p.at.getTime()) && isFinite(p.value));
+
+function paint(stations, series, { fromCache = false } = {}) {
+  renderStations(stations);
+  renderChart(series);
+  renderHero(bestReading(currentSpot, stations, series));
+  $('chartHint').textContent = fromCache ? 'depuis le cache' : 'modèle Eawag';
+}
+
+async function refresh({ silent = false } = {}) {
+  if (refreshing) return;
+  refreshing = true;
+  $('refresh').classList.add('busy');
+
+  const [stationsRes, seriesRes] = await Promise.allSettled([
+    fetchMeasuredStations(),
+    fetchModelSeries(currentSpot),
+  ]);
+
+  let stations;
+  if (stationsRes.status === 'fulfilled') {
+    stations = stationsRes.value;
+    cacheSet('stations', stations);
+  } else {
+    note('existenz/latest', false, stationsRes.reason?.message || 'échec');
+    stations = cacheGet('stations');
+  }
+
+  let series;
+  if (seriesRes.status === 'fulfilled') {
+    series = seriesRes.value;
+    cacheSet(`series.${currentSpot.key}`,
+      series.map((p) => ({ at: p.at.toISOString(), value: p.value })));
+  } else {
+    note('alplakes', false, seriesRes.reason?.message || 'échec');
+    series = reviveSeries(cacheGet(`series.${currentSpot.key}`));
+  }
+
+  paint(stations, series, { fromCache: seriesRes.status === 'rejected' && series.length > 0 });
+
+  if (!silent && stationsRes.status === 'rejected' && seriesRes.status === 'rejected') {
+    toast(navigator.onLine ? 'Sources injoignables' : 'Hors ligne — données en cache');
+  }
+
+  $('refresh').classList.remove('busy');
+  refreshing = false;
+}
+
+// Peint immédiatement la dernière donnée connue ; indique si elle existait.
+function paintFromCache() {
+  const stations = cacheGet('stations');
+  const series = reviveSeries(cacheGet(`series.${currentSpot.key}`));
+  if (!stations && !series.length) return false;
+  paint(stations, series, { fromCache: true });
+  return true;
+}
+
+function selectSpot(spot) {
+  currentSpot = spot;
+  cacheSet('spot', spot.key);
+  markSelectedChip();
+  paintFromCache();
+  refresh({ silent: true });
+}
+
+/* ------------------------------------------------------ iOS & cycle de vie */
+
+function maybeShowInstallHint() {
+  const standalone = window.navigator.standalone === true
+    || window.matchMedia('(display-mode: standalone)').matches;
+  const iOS = /iP(hone|ad|od)/.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (standalone || !iOS || cacheGet('installHintDismissed')) return;
+
+  $('install').hidden = false;
+  $('installClose').addEventListener('click', () => {
+    $('install').hidden = true;
+    cacheSet('installHintDismissed', true);
+  });
+}
+
+function init() {
+  currentSpot = SPOTS.find((s) => s.key === cacheGet('spot')) || SPOTS[0];
+
+  renderSpots();
+  markSelectedChip();
+  const hadCache = paintFromCache();
+  // Au premier lancement sans cache, un échec total mérite d'être signalé.
+  refresh({ silent: hadCache });
+
+  $('refresh').addEventListener('click', () => refresh());
+
+  // Sur iOS l'app reste ouverte des jours : on rafraîchit au retour au premier plan.
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) refresh({ silent: true });
+  });
+  window.addEventListener('online', () => refresh({ silent: true }));
+  setInterval(() => { if (!document.hidden) refresh({ silent: true }); }, CFG.autoRefreshMs);
+
+  maybeShowInstallHint();
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js')
+      .catch((err) => note('service worker', false, err.message));
+  }
+}
+
+init();

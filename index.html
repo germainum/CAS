@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Température du Léman</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="La température de l'eau du lac Léman, lieu par lieu, sur votre iPhone.">
+
+<meta name="theme-color" content="#0b4f7a" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#05253d" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="dark light">
+
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Léman">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32">
+
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<div class="app">
+
+  <header class="top">
+    <h1 class="brand">Lac Léman</h1>
+    <button id="refresh" class="icon-btn" type="button" aria-label="Actualiser">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v4h-4"/></svg>
+    </button>
+  </header>
+
+  <nav class="spots" id="spots" aria-label="Choisir un lieu"></nav>
+
+  <main>
+    <section class="card hero" aria-live="polite">
+      <p class="hero-place" id="heroPlace">…</p>
+      <p class="hero-temp"><span id="heroValue" class="hero-value">--</span><span class="hero-unit">°C</span></p>
+      <p class="hero-meta">
+        <span class="badge" id="heroBadge">chargement</span>
+        <span class="age" id="heroAge"></span>
+      </p>
+      <p class="hero-advice" id="heroAdvice">Récupération des données…</p>
+    </section>
+
+    <section class="card" id="chartCard">
+      <div class="card-head">
+        <h2>Évolution</h2>
+        <span class="hint" id="chartHint">modèle Eawag</span>
+      </div>
+      <div class="chart" id="chart"></div>
+      <p class="chart-legend">
+        <span class="key key-past"></span> simulé
+        <span class="key key-future"></span> prévision
+      </p>
+    </section>
+
+    <section class="card" id="stationsCard">
+      <div class="card-head">
+        <h2>Stations de mesure</h2>
+        <span class="hint">OFEV</span>
+      </div>
+      <ul class="stations" id="stations"></ul>
+    </section>
+
+    <footer class="foot">
+      <p class="sources">
+        Données&nbsp;: <a href="https://www.hydrodaten.admin.ch/" target="_blank" rel="noopener">OFEV</a>
+        via <a href="https://api.existenz.ch/" target="_blank" rel="noopener">existenz.ch</a>,
+        simulation <a href="https://www.alplakes.eawag.ch/" target="_blank" rel="noopener">Alplakes&nbsp;/&nbsp;Eawag</a>.
+      </p>
+      <p class="sources">Les indications de baignade n'ont aucune valeur officielle.</p>
+      <details class="diag">
+        <summary>Diagnostic des sources</summary>
+        <pre id="diagOut">—</pre>
+      </details>
+    </footer>
+  </main>
+
+  <div class="install" id="install" hidden>
+    <p>Ajoutez l'app à votre écran d'accueil&nbsp;: <b>Partager</b> → <b>Sur l'écran d'accueil</b>.</p>
+    <button type="button" id="installClose" class="link-btn">Fermer</button>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+</div>
+
+<script src="app.js" type="module"></script>
+</body>
+</html>
