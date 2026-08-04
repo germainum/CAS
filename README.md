@@ -21,8 +21,11 @@ rafraîchir.
 
 ## Ce qu'affiche l'app
 
-- La **température actuelle** au lieu choisi, en grand, avec l'âge de la donnée.
-- Un badge indiquant la nature de la valeur : `mesure` (station officielle proche)
+- La **température actuelle** au lieu choisi, en très gros caractères en haut
+  d'écran, avec l'âge de la donnée.
+- Une **carte du lac** portant la température des dix lieux, comparables entre
+  elles car toutes issues du modèle. Un point se touche pour changer de lieu.
+- La nature de la valeur sous le chiffre : `mesure` (station officielle proche)
   ou `modèle Eawag` (simulation du lac). Une valeur de plus de six heures est
   estompée.
 - Une **courbe sur sept jours** : cinq jours écoulés en trait plein, deux jours de
@@ -46,6 +49,12 @@ La durée conseillée découle de la température de l'eau : **une minute par de
 et c'est un plafond, jamais un objectif. Dix minutes à 10 °C. La valeur est
 plafonnée à 20 minutes, car au-delà de 18 °C la règle perd son sens — ce n'est
 plus un bain froid. Elle reste réglable à la main.
+
+Le lancement demande **deux gestes** : « Démarrer », qui affiche les consignes
+essentielles, puis un **maintien d'une seconde** sur un bouton circulaire dont
+l'anneau se remplit. Ce n'est pas une coquetterie : cette seconde impose une
+lecture des consignes juste avant d'entrer dans l'eau, et rend impossible un
+lancement par mégarde. Relâcher trop tôt n'enclenche rien et le dit.
 
 Pendant l'immersion, le minuteur passe par trois temps, dont les seuils suivent la
 durée totale : entrée dans l'eau (respiration), régime stable (rester près du
@@ -76,6 +85,17 @@ dans l'app. Elles ne remplacent pas un avis médical.
 Une mesure officielle située à moins de 12 km du lieu choisi et datant de moins de
 six heures est privilégiée ; sinon la simulation prend le relais ; sinon le cache
 local, avec son âge affiché.
+
+### La carte
+
+Le contour du Léman est tracé à la main dans `sources.js`, en une cinquantaine de
+points de rive : l'environnement de développement n'a pas d'accès réseau pour
+récupérer un contour officiel. Il vise la silhouette reconnaissable du lac, pas
+la précision cartographique.
+
+Un test vérifie que **les dix lieux tombent dans l'eau** — il a d'ailleurs pris
+Genève et Nyon en défaut, tous deux trop près de la rive. Sa portée dépasse la
+carte : un point posé à terre n'obtiendrait aucune valeur du modèle.
 
 ### Pourquoi le modèle passe par la CI
 
@@ -119,7 +139,8 @@ utile depuis l'iPhone lui-même, il liste les appels réussis ou échoués.
 | `app.css` | mise en forme, thèmes clair et sombre, encoches d'écran |
 | `sources.js` | URL, analyse des réponses, choix de la valeur — sans DOM ni réseau |
 | `app.js` | requêtes, cache local, rendu, cycle de vie |
-| `bath.js` | minuteur de bain froid : durée, phases, session |
+| `bath.js` | minuteur : consignes, maintien de confirmation, phases, session |
+| `lakemap.js` | carte du lac : silhouette, points, températures |
 | `sw.js` | service worker : réseau d'abord, cache en secours |
 | `manifest.webmanifest` | nom, icônes, mode plein écran |
 | `tools/build-model-data.mjs` | précalcul de `data/model.json` dans la CI |

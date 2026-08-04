@@ -23,8 +23,8 @@ export const CFG = {
 
 // Points pris au large des localités : le modèle n'a de valeur que sur l'eau.
 export const SPOTS = [
-  { key: 'geneve',    name: 'Genève',      sub: 'Rade / Pâquis', lat: 46.2135, lon: 6.1560 },
-  { key: 'nyon',      name: 'Nyon',        sub: '',              lat: 46.3900, lon: 6.2450 },
+  { key: 'geneve',    name: 'Genève',      sub: 'Rade / Pâquis', lat: 46.2210, lon: 6.1610 },
+  { key: 'nyon',      name: 'Nyon',        sub: '',              lat: 46.3780, lon: 6.2650 },
   { key: 'morges',    name: 'Morges',      sub: '',              lat: 46.4980, lon: 6.4980 },
   { key: 'lausanne',  name: 'Lausanne',    sub: 'Ouchy',         lat: 46.4950, lon: 6.6300 },
   { key: 'vevey',     name: 'Vevey',       sub: '',              lat: 46.4520, lon: 6.8420 },
@@ -300,6 +300,90 @@ const UNKNOWN = {
   adj: 'inconnue',
   aside: 'Aucune source ne répond pour l’instant.',
 };
+
+/* ------------------------------------------------------------ carte du lac */
+
+// Contour schématique du Léman, en [lat, lon], parcouru dans le sens horaire :
+// rive suisse de Genève à Villeneuve, puis rive française jusqu'à Genève.
+// Tracé à la main d'après des points de rive connus — l'environnement de
+// développement n'a pas d'accès réseau pour récupérer un contour officiel. Il
+// vise la silhouette reconnaissable du lac, pas la précision cartographique.
+export const LAKE_OUTLINE = [
+  // rive suisse, du Rhône à Genève jusqu'à Villeneuve
+  [46.2075, 6.1490], [46.2135, 6.1510], [46.2205, 6.1478], [46.2380, 6.1500],
+  [46.2560, 6.1530], [46.2830, 6.1650], [46.3170, 6.1930], [46.3520, 6.2100],
+  [46.3830, 6.2380], [46.3960, 6.2560], [46.4260, 6.2960], [46.4580, 6.3400],
+  [46.4700, 6.4000], [46.4830, 6.4560], [46.5100, 6.4990], [46.5120, 6.5670],
+  [46.5140, 6.6000], [46.5070, 6.6280], [46.5060, 6.6600], [46.5030, 6.6870],
+  [46.4900, 6.7300], [46.4780, 6.7770], [46.4680, 6.8100], [46.4590, 6.8430],
+  [46.4530, 6.8600], [46.4400, 6.8880], [46.4340, 6.9110], [46.4280, 6.9250],
+  [46.4140, 6.9280], [46.4000, 6.9300],
+  // rive française, de Villeneuve à Genève ; le promontoire d'Yvoire marque
+  // le resserrement entre Grand-Lac et Petit-Lac
+  [46.3900, 6.8900], [46.3900, 6.8600], [46.3920, 6.8060], [46.3990, 6.7600],
+  [46.4060, 6.7200], [46.4030, 6.6500], [46.4010, 6.5880], [46.3900, 6.5350],
+  [46.3760, 6.4780], [46.3660, 6.4300], [46.3530, 6.3700], [46.3620, 6.3400],
+  [46.3700, 6.3250], [46.3680, 6.3030], [46.3530, 6.2830], [46.3250, 6.2480],
+  [46.3030, 6.2450], [46.2870, 6.2200], [46.2700, 6.2000], [46.2450, 6.1830],
+  [46.2200, 6.1680], [46.2075, 6.1560],
+];
+
+// Projette des points [lat, lon] dans une boîte SVG. Équirectangulaire corrigée
+// par le cosinus de la latitude médiane : à cette échelle, l'écart avec une
+// projection conforme est invisible, et les proportions du lac sont justes.
+export function projectPoints(points, { width, height, pad = 8 }) {
+  if (!points.length) return { points: [], project: () => [0, 0] };
+
+  const lats = points.map((p) => p[0]);
+  const lons = points.map((p) => p[1]);
+  const latMid = (Math.min(...lats) + Math.max(...lats)) / 2;
+  const kx = Math.cos((latMid * Math.PI) / 180);
+
+  const xs = lons.map((lon) => lon * kx);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minY = Math.min(...lats), maxY = Math.max(...lats);
+
+  // Une seule échelle pour les deux axes : le lac ne doit pas être déformé.
+  const scale = Math.min((width - 2 * pad) / (maxX - minX), (height - 2 * pad) / (maxY - minY));
+  const offX = (width - (maxX - minX) * scale) / 2;
+  const offY = (height - (maxY - minY) * scale) / 2;
+
+  const project = (lat, lon) => [
+    offX + (lon * kx - minX) * scale,
+    // Latitude croissante vers le nord, y croissant vers le bas : on inverse.
+    offY + (maxY - lat) * scale,
+  ];
+
+  return { points: points.map(([lat, lon]) => project(lat, lon)), project, scale };
+}
+
+// Test du point dans le polygone, par lancer de rayon. Sert à vérifier qu'aucun
+// lieu proposé n'est posé sur la terre ferme — le modèle n'y répondrait pas.
+export function pointInPolygon(lat, lon, polygon = LAKE_OUTLINE) {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const [latI, lonI] = polygon[i];
+    const [latJ, lonJ] = polygon[j];
+    const crosses = (lonI > lon) !== (lonJ > lon)
+      && lat < latI + ((lon - lonI) / (lonJ - lonI)) * (latJ - latI);
+    if (crosses) inside = !inside;
+  }
+  return inside;
+}
+
+// Température courante de chaque lieu dans l'instantané : de quoi comparer les
+// lieux entre eux sur la carte, toutes valeurs issues de la même source.
+export function snapshotCurrentTemps(raw, now = Date.now()) {
+  const out = {};
+  for (const key of Object.keys(raw?.spots ?? {})) {
+    const points = parseSnapshot(raw, key);
+    if (!points.length) continue;
+    const closest = points.reduce((a, b) =>
+      Math.abs(b.at.getTime() - now) < Math.abs(a.at.getTime() - now) ? b : a);
+    out[key] = closest.value;
+  }
+  return out;
+}
 
 /* ---------------------------------------------------------------- gestes */
 
