@@ -63,21 +63,18 @@
 
     <!-- Engagement explicite : la règle la plus importante ne se lit pas en
          passant, elle se coche. Le bouton reste inerte sans elle. -->
-    <label class="card check" for="alone">
+    <label class="check" for="alone">
       <input type="checkbox" id="alone">
       <span class="box" aria-hidden="true">
         <svg viewBox="0 0 16 16"><path d="M3 8.5 6.2 12 13 4.5"/></svg>
       </span>
-      <span class="check-text">
-        Je ne suis pas seul. Crampe ou malaise arrivent sans prévenir.
-      </span>
+      <span class="check-text">Je ne suis pas seul.</span>
     </label>
 
     <button type="button" id="bathStart" class="cta" disabled>
       <svg class="cta-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5-9-5.5Z"/></svg>
       Démarrer le bain
     </button>
-    <p class="cta-under">La respiration guidée démarre dès l'entrée dans l'eau</p>
   </section>
 
   <!-- La carte, en dessous : comparer les lieux vient après le geste. -->
@@ -99,7 +96,8 @@
     <p class="micro-note">
       <a href="https://www.hydrodaten.admin.ch/" target="_blank" rel="noopener">OFEV</a>
       via <a href="https://api.existenz.ch/" target="_blank" rel="noopener">existenz.ch</a>,
-      simulation <a href="https://www.alplakes.eawag.ch/" target="_blank" rel="noopener">Alplakes&nbsp;/&nbsp;Eawag</a>.
+      simulation <a href="https://www.alplakes.eawag.ch/" target="_blank" rel="noopener">Alplakes&nbsp;/&nbsp;Eawag</a>,
+      contour du lac <a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener">Natural&nbsp;Earth</a>.
       Indications de baignade sans valeur officielle.
     </p>
     <details class="diag">

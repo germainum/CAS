@@ -89,6 +89,7 @@ dans l'app. Elles ne remplacent pas un avis médical.
 | --- | --- | --- | --- |
 | [existenz.ch](https://api.existenz.ch/) (données OFEV) | températures mesurées en station | mesure in situ | appelée directement par le navigateur |
 | [Alplakes / Eawag](https://www.alplakes.eawag.ch/) | valeur en tout point + historique + prévision | simulation Delft3D-FLOW | précalculée par la CI (voir ci-dessous) |
+| [Natural Earth](https://www.naturalearthdata.com/) | contour du lac | domaine public | figé dans `sources.js` |
 
 Une mesure officielle située à moins de 12 km du lieu choisi et datant de moins de
 six heures est privilégiée ; sinon la simulation prend le relais ; sinon le cache
@@ -96,14 +97,16 @@ local, avec son âge affiché.
 
 ### La carte
 
-Le contour du Léman est tracé à la main dans `sources.js`, en une cinquantaine de
-points de rive : l'environnement de développement n'a pas d'accès réseau pour
-récupérer un contour officiel. Il vise la silhouette reconnaissable du lac, pas
-la précision cartographique.
+Le contour du Léman vient de **Natural Earth 10m** (domaine public), converti
+depuis son GeoJSON en `[lat, lon]` dans `sources.js`. Trente-huit points : la
+silhouette est juste, mais lissée près des rives — ce n'est pas une carte de
+navigation.
 
-Un test vérifie que **les dix lieux tombent dans l'eau** — il a d'ailleurs pris
-Genève et Nyon en défaut, tous deux trop près de la rive. Sa portée dépasse la
-carte : un point posé à terre n'obtiendrait aucune valeur du modèle.
+Un test vérifie que **les dix lieux tombent dans l'eau**, et il travaille : il a
+d'abord pris Genève et Nyon en défaut sur un contour dessiné à la main, puis
+Genève, Le Bouveret, Évian et Thonon sur le contour réel, plus sévère près des
+rives. Les quatre ont été repoussés de 0,2 à 1,5 km au large. Sa portée dépasse
+la carte : un point posé à terre n'obtiendrait aucune valeur du modèle.
 
 ### Pourquoi le modèle passe par la CI
 

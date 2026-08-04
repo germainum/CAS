@@ -89,11 +89,15 @@ body {
 
 /* ------------------------------------------------------- premier écran */
 
-/* L'écran de préparation prend sa hauteur naturelle : la carte qui suit dépasse
-   alors juste assez du pli pour inviter à défiler, sans vide artificiel. */
+/* L'écran de préparation occupe l'appareil, et le bouton se pose en bas : le
+   geste principal tombe sous le pouce, l'espace au-dessus laisse respirer. */
 .screen {
+  min-height: 100vh;
+  min-height: 100dvh;
   padding-top: calc(env(safe-area-inset-top) + 18px);
-  padding-bottom: 8px;
+  padding-bottom: 14px;
+  display: flex;
+  flex-direction: column;
 }
 
 .top {
@@ -794,8 +798,9 @@ body.timing { overflow: hidden; }
 
 .check {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 13px;
+  padding: 4px 2px;
   cursor: pointer;
 }
 
@@ -810,7 +815,6 @@ body.timing { overflow: hidden; }
   flex: none;
   width: 26px;
   height: 26px;
-  margin-top: 1px;
   display: grid;
   place-items: center;
   border: 1.5px solid var(--rule);
@@ -837,7 +841,7 @@ body.timing { overflow: hidden; }
 .check input:checked ~ .box svg { opacity: 1; }
 .check input:focus-visible ~ .box { outline: 2px solid var(--ink); outline-offset: 2px; }
 
-.check-text { font-size: 14px; line-height: 1.45; }
+.check-text { font-size: 14.5px; font-weight: 500; line-height: 1.4; }
 
 /* ----------------------------------------------------------- action */
 
@@ -847,7 +851,8 @@ body.timing { overflow: hidden; }
   justify-content: center;
   gap: 10px;
   width: 100%;
-  margin: 18px 0 0;
+  /* Poussé au bas de l'écran par l'espace disponible. */
+  margin: auto 0 0;
   padding: 17px 20px;
   border: 0;
   border-radius: var(--radius);
