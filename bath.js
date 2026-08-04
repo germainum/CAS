@@ -12,6 +12,7 @@ const $ = (id) => document.getElementById(id);
 
 const STORE = 'leman.v2.bath';
 const MIN_MINUTES = 1;
+const HOLD_MS = 1100;      // durée de maintien pour confirmer le lancement
 
 let temp = null;          // température de l'eau connue
 let minutes = null;       // durée retenue, ajustable par l'utilisateur
@@ -78,6 +79,7 @@ function renderPlan() {
   if (minutes == null) minutes = plan ? plan.minutes : 5;
 
   $('bathMinutes').textContent = minutes;
+  $('briefMinutes').textContent = minutes;
   $('bathStart').disabled = false;
 
   if (!plan) {
@@ -117,17 +119,76 @@ function renderTimer() {
   }
 }
 
+/* ------------------------------------------------- confirmation à maintenir */
+
+// Un simple appui suffirait techniquement. Le maintien impose une seconde
+// d'attention sur les consignes, juste avant d'entrer dans l'eau — et rend
+// impossible un lancement par mégarde dans la poche.
+const RING = 2 * Math.PI * 43;
+let holding = null;
+
+function setHoldProgress(p) {
+  const fill = $('holdFill');
+  fill.style.strokeDasharray = String(RING);
+  fill.style.strokeDashoffset = String(RING * (1 - Math.max(0, Math.min(1, p))));
+}
+
+function holdStep(now) {
+  if (!holding) return;
+  const p = (now - holding.from) / HOLD_MS;
+  setHoldProgress(p);
+  if (p >= 1) {
+    holding = null;
+    $('holdLabel').textContent = 'C’est parti';
+    confirmStart();
+    return;
+  }
+  holding.raf = requestAnimationFrame(holdStep);
+}
+
+function holdBegin(e) {
+  if (holding) return;
+  e.preventDefault();
+  armAudio();                       // le contexte audio naît de ce geste
+  holding = { from: performance.now() };
+  $('holdBtn').classList.add('held');
+  $('holdNote').textContent = 'Ne relâchez pas…';
+  holding.raf = requestAnimationFrame(holdStep);
+}
+
+function holdEnd() {
+  if (!holding) return;
+  cancelAnimationFrame(holding.raf);
+  holding = null;
+  $('holdBtn').classList.remove('held');
+  $('holdNote').textContent = 'Relâché trop tôt — maintenez une seconde';
+  setHoldProgress(0);
+}
+
 /* -------------------------------------------------------------- contrôle */
 
-function start() {
-  armAudio();
+// Étape de consignes : rien ne démarre encore.
+function openBriefing() {
+  $('briefMinutes').textContent = minutes;
+  $('holdLabel').textContent = 'Maintenir';
+  $('holdNote').textContent = 'Maintenez une seconde pour lancer';
+  setHoldProgress(0);
+  $('timer').dataset.state = 'briefing';
+  $('timer').hidden = false;
+  document.body.classList.add('timing');
+  $('holdBtn').focus();
+}
+
+function confirmStart() {
   session = { startedAt: Date.now(), totalSec: minutes * 60 };
   beeped = { exit: false, done: false };
   save();
+  beep(520, .12);                   // repère sonore de départ
   open();
 }
 
 function open() {
+  $('timer').dataset.state = 'running';
   $('timer').hidden = false;
   document.body.classList.add('timing');
   renderTimer();
@@ -135,13 +196,18 @@ function open() {
   ticker = setInterval(renderTimer, 250);
 }
 
-function stop() {
+function close() {
   clearInterval(ticker);
   ticker = null;
-  session = null;
-  save();
+  holdEnd();
   $('timer').hidden = true;
   document.body.classList.remove('timing');
+}
+
+function stop() {
+  session = null;
+  save();
+  close();
 }
 
 function step(delta) {
@@ -163,7 +229,21 @@ export function setWaterTemperature(value) {
 export function initBath() {
   renderPlan();
 
-  $('bathStart').addEventListener('click', start);
+  $('bathStart').addEventListener('click', openBriefing);
+  $('briefCancel').addEventListener('click', close);
+
+  const btn = $('holdBtn');
+  btn.addEventListener('pointerdown', holdBegin);
+  btn.addEventListener('pointerup', holdEnd);
+  btn.addEventListener('pointercancel', holdEnd);
+  btn.addEventListener('pointerleave', holdEnd);
+  // Au clavier, maintenir la touche produit le même engagement.
+  btn.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') holdBegin(e);
+  });
+  btn.addEventListener('keyup', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') holdEnd();
+  });
   $('bathMinus').addEventListener('click', () => { manual = true; step(-1); });
   $('bathPlus').addEventListener('click', () => { manual = true; step(1); });
   $('timerDone').addEventListener('click', stop);
@@ -183,6 +263,6 @@ export function initBath() {
       exit: bathPhase(el, session.totalSec).key !== 'shock',
       done: el >= session.totalSec,
     };
-    open();
+    open();   // une session en cours reprend directement à l'immersion
   }
 }

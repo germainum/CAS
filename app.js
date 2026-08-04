@@ -9,16 +9,19 @@
 // toujours quelque chose, hors ligne compris, en signalant l'âge de la donnée.
 
 import { initBath, setWaterTemperature } from './bath.js';
+import { renderLakeMap } from './lakemap.js';
 import {
   CFG, SPOTS, asArray, bestReading, isStale, mood, nextIndex, parseMeasuredStations,
-  parseSeries, parseSnapshot, parseStationMeta, snapshotAge, swipeDecision, toDate,
-  urlLatestTemperature, urlModelPoint, urlModelSnapshot, urlStationMeta,
+  parseSeries, parseSnapshot, parseStationMeta, snapshotAge, snapshotCurrentTemps,
+  swipeDecision, toDate, urlLatestTemperature, urlModelPoint, urlModelSnapshot,
+  urlStationMeta,
 } from './sources.js';
 
 const $ = (id) => document.getElementById(id);
 const diagnostics = [];
 let currentSpot = SPOTS[0];
 let refreshing = false;
+let spotTemps = {};       // température par lieu, pour la carte
 
 /* ------------------------------------------------------------------ affichage */
 
@@ -180,7 +183,8 @@ async function fetchModelSeries(spot) {
     if (!points.length) throw new Error(`aucun point pour ${spot.key}`);
     const ageH = Math.round((snapshotAge(raw) ?? 0) / 3600000);
     note('instantané', true, `${spot.name} : ${points.length} points, calculé il y a ${ageH} h`);
-    return { points, origin: 'snapshot', age: snapshotAge(raw) };
+    // Les températures de tous les lieux servent à la carte.
+    return { points, origin: 'snapshot', age: snapshotAge(raw), temps: snapshotCurrentTemps(raw) };
   } catch (err) {
     note('instantané', false, err.message);
   }
@@ -194,7 +198,8 @@ async function fetchModelSeries(spot) {
   const points = parseSeries(await getJSON(url));
   if (!points.length) throw new Error('série vide');
   note('alplakes direct', true, `${spot.name} : ${points.length} points`);
-  return { points, origin: 'live', age: 0 };
+  // L'appel direct ne porte que le lieu demandé : la carte garde ce qu'elle a.
+  return { points, origin: 'live', age: 0, temps: null };
 }
 
 /* ----------------------------------------------------------------- rendu UI */
@@ -330,6 +335,18 @@ function paint(stations, series, hint = 'modèle Eawag') {
   renderChart(series);
   renderHero(bestReading(currentSpot, stations, series));
   $('chartHint').textContent = hint;
+  drawMap();
+}
+
+function drawMap() {
+  renderLakeMap($('map'), {
+    temps: spotTemps,
+    selectedKey: currentSpot.key,
+    onSelect: (key) => {
+      const spot = SPOTS.find((s) => s.key === key);
+      if (spot) selectSpot(spot);
+    },
+  });
 }
 
 async function refresh({ silent = false } = {}) {
@@ -354,8 +371,12 @@ async function refresh({ silent = false } = {}) {
   let series;
   let hint = 'modèle Eawag';
   if (seriesRes.status === 'fulfilled') {
-    const { points, origin, age } = seriesRes.value;
+    const { points, origin, age, temps } = seriesRes.value;
     series = points;
+    if (temps && Object.keys(temps).length) {
+      spotTemps = temps;
+      cacheSet('spotTemps', temps);
+    }
     // Un instantané qui ne se rafraîchit plus doit se voir : la CI est en panne.
     const ageH = Math.round((age || 0) / 3600000);
     hint = origin === 'live' ? 'modèle Eawag, direct'
@@ -471,6 +492,7 @@ function maybeShowInstallHint() {
 
 function init() {
   currentSpot = SPOTS.find((s) => s.key === cacheGet('spot')) || SPOTS[0];
+  spotTemps = cacheGet('spotTemps') || {};
 
   renderSpots();
   markSelectedChip();

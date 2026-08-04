@@ -5,7 +5,8 @@
 import assert from 'node:assert/strict';
 
 import {
-  BATH_MAX_MINUTES, CFG, SPOTS, asArray, bathPhase, bathPlan, bestReading, distanceKm,
+  BATH_MAX_MINUTES, CFG, LAKE_OUTLINE, SPOTS, asArray, bathPhase, bathPlan, bestReading,
+  distanceKm, pointInPolygon, projectPoints, snapshotCurrentTemps,
   formatClock, isStale, mood, nextIndex, parseMeasuredStations, swipeDecision,
   parseSeries, parseSnapshot, parseStationMeta, snapshotAge, stampUTC, toDate, urlModelPoint,
 } from '../sources.js';
@@ -33,8 +34,12 @@ test('stampUTC produit le format attendu par Alplakes', () => {
 });
 
 test("l'URL du modèle contient lac, modèle, profondeur et coordonnées", () => {
-  const url = urlModelPoint(SPOTS[0], new Date('2026-08-01T00:00:00Z'), new Date('2026-08-06T00:00:00Z'));
-  assert.match(url, /simulations\/point\/delft3d-flow\/geneva\/202608010000\/202608060000\/1\/46\.2135\/6\.156$/);
+  const spot = SPOTS[0];
+  const url = urlModelPoint(spot, new Date('2026-08-01T00:00:00Z'), new Date('2026-08-06T00:00:00Z'));
+  // Les coordonnées sont lues dans SPOTS : déplacer un lieu ne doit pas casser
+  // ce test, seulement le test de position dans le lac, plus bas.
+  const tail = `/simulations/point/delft3d-flow/geneva/202608010000/202608060000/1/${spot.lat}/${spot.lon}`;
+  assert.ok(url.endsWith(tail), `attendu ...${tail}, obtenu ${url}`);
 });
 
 test('toDate accepte secondes, millisecondes, ISO et Date', () => {
@@ -468,6 +473,64 @@ test('une valeur absente donne une bande neutre, pas une erreur', () => {
     assert.equal(mood(bad).band, 'unknown');
     assert.equal(mood(bad).adj, 'inconnue');
   }
+});
+
+console.log('\ncarte du lac');
+
+// Ce test a une valeur au-delà de la carte : un lieu posé sur la terre ferme
+// n'obtiendrait aucune valeur du modèle. Il a d'ailleurs pris Genève et Nyon
+// en défaut, tous deux trop près de la rive.
+test('les dix lieux sont dans l’eau, pas sur la rive', () => {
+  const dehors = SPOTS.filter((s) => !pointInPolygon(s.lat, s.lon)).map((s) => s.name);
+  assert.deepEqual(dehors, [], `hors du lac : ${dehors.join(', ')}`);
+});
+
+test('le contour est fermé et couvre l’étendue du lac', () => {
+  assert.ok(LAKE_OUTLINE.length > 30, 'silhouette trop grossière');
+  const lats = LAKE_OUTLINE.map((p) => p[0]);
+  const lons = LAKE_OUTLINE.map((p) => p[1]);
+  // Du Rhône à Genève jusqu'à Villeneuve : environ 0,8° de longitude.
+  assert.ok(Math.max(...lons) - Math.min(...lons) > 0.7);
+  assert.ok(Math.max(...lats) - Math.min(...lats) > 0.25);
+  assert.ok(LAKE_OUTLINE.every(([la, lo]) => la > 46.1 && la < 46.6 && lo > 6.1 && lo < 7.0));
+});
+
+test('un point hors du lac est bien rejeté', () => {
+  assert.equal(pointInPolygon(46.5197, 6.6323), false, 'centre de Lausanne : à terre');
+  assert.equal(pointInPolygon(46.2044, 6.1432), false, 'centre de Genève : à terre');
+  assert.equal(pointInPolygon(46.45, 6.60), true, 'plein lac');
+});
+
+test('la projection tient dans la boîte et respecte les proportions', () => {
+  const { points } = projectPoints(LAKE_OUTLINE, { width: 340, height: 208, pad: 22 });
+  assert.equal(points.length, LAKE_OUTLINE.length);
+  assert.ok(points.every(([x, y]) => x >= 0 && x <= 340 && y >= 0 && y <= 208), 'débordement');
+  // Le lac est nettement plus large que haut : la projection doit le montrer.
+  const w = Math.max(...points.map((p) => p[0])) - Math.min(...points.map((p) => p[0]));
+  const h = Math.max(...points.map((p) => p[1])) - Math.min(...points.map((p) => p[1]));
+  assert.ok(w / h > 1.2, `rapport ${(w / h).toFixed(2)} : le lac paraît trop haut`);
+});
+
+test('la projection place le nord en haut et l’ouest à gauche', () => {
+  const { project } = projectPoints(LAKE_OUTLINE, { width: 340, height: 208 });
+  const geneve = project(46.2210, 6.1610);
+  const villeneuve = project(46.4000, 6.9300);
+  assert.ok(geneve[0] < villeneuve[0], 'Genève est à l’ouest de Villeneuve');
+  assert.ok(geneve[1] > villeneuve[1], 'Genève est au sud de Villeneuve');
+});
+
+test('snapshotCurrentTemps prend, pour chaque lieu, le point le plus proche de maintenant', () => {
+  const iso = (h) => new Date(NOW + h * 3600 * 1000).toISOString();
+  const temps = snapshotCurrentTemps({
+    spots: {
+      geneve: { t: [iso(-3), iso(0), iso(3)], v: [20, 21, 22] },
+      vevey: { t: [iso(-6), iso(-3)], v: [18, 19] },
+      vide: { t: [], v: [] },
+    },
+  }, NOW);
+  assert.equal(temps.geneve, 21);
+  assert.equal(temps.vevey, 19, 'le plus proche de maintenant, même dans le passé');
+  assert.ok(!('vide' in temps), 'un lieu sans point ne doit pas apparaître');
 });
 
 console.log('\nbalayage entre les lieux');

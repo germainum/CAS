@@ -142,20 +142,19 @@ body {
 /* L'affirmation occupe l'espace disponible, mais se pose bas : le vide se
    creuse au-dessus, comme dans la référence, plutôt que de part et d'autre. */
 .statement {
-  flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  padding: 24px 0 max(40px, 7vh);
+  padding: 26px 0 0;
 }
 
 .statement h1 {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
-  font-size: clamp(2.85rem, 15.5vw, 5.4rem);
+  font-size: clamp(2.1rem, 11.5vw, 3.4rem);
   font-weight: 900;
-  line-height: .92;
-  letter-spacing: -.052em;
+  line-height: .96;
+  letter-spacing: -.04em;
   text-wrap: balance;
 }
 
@@ -171,7 +170,7 @@ body {
 }
 
 .aside {
-  margin: 26px 0 0;
+  margin: 16px 0 0;
   max-width: 32ch;
   font-size: 14px;
   line-height: 1.45;
@@ -180,22 +179,15 @@ body {
 
 /* ------------------------------------------------------ lecture chiffrée */
 
-.readout {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 18px;
-  padding-top: 16px;
-  border-top: 1px solid var(--rule);
-}
+/* En tête d'écran : le chiffre d'abord, le lieu dessous. C'est la première
+   chose que l'on vient chercher. */
+.readout { margin-top: 26px; }
 
 .readout-label {
-  margin: 0 0 8px;
-  padding-right: 18px;
-  border-right: 1px solid var(--rule);
+  margin: 10px 0 0;
   font-size: 11px;
-  line-height: 1.45;
-  letter-spacing: .07em;
+  line-height: 1.5;
+  letter-spacing: .09em;
   text-transform: uppercase;
   color: var(--ink-soft);
 }
@@ -204,14 +196,13 @@ body {
 
 .readout-value {
   margin: 0;
-  flex: none;
   display: flex;
   align-items: flex-start;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
-  font-size: clamp(3.2rem, 16.5vw, 5.2rem);
+  font-size: clamp(4.4rem, 23vw, 7rem);
   font-weight: 900;
-  line-height: .88;
-  letter-spacing: -.04em;
+  line-height: .84;
+  letter-spacing: -.05em;
   font-variant-numeric: tabular-nums;
 }
 
@@ -599,3 +590,153 @@ body.timing { overflow: hidden; }
   -webkit-user-select: none;
   user-select: none;
 }
+
+/* ---------------------------------------------------------- carte du lac */
+
+.map {
+  /* Occupe la hauteur restante du premier écran, sans jamais la dépasser. */
+  flex: 1;
+  min-height: 190px;
+  display: grid;
+  place-items: center;
+  margin: 18px -6px 0;
+}
+
+.map svg { display: block; width: 100%; max-height: 100%; height: auto; overflow: visible; }
+
+.map-note { margin: 6px 0 0; text-align: center; }
+
+/* Le lac se lit comme une surface, pas comme un simple tracé. */
+.map .shore {
+  fill: color-mix(in srgb, var(--ink) 7%, transparent);
+  stroke: var(--rule);
+  stroke-width: 1;
+}
+
+@supports not (color: color-mix(in srgb, red, blue)) {
+  .map .shore { fill: rgba(125, 145, 165, .18); }
+}
+
+.map .hit { fill: transparent; cursor: pointer; }
+.map .dot { transition: r 180ms ease; }
+.map .ring { fill: none; stroke: var(--ink); stroke-width: 1.5; }
+
+.map .lab {
+  fill: var(--ink);
+  font-size: 10px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.02em;
+}
+
+.map .nom {
+  fill: var(--ink-soft);
+  font-size: 7px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.map .spot.on .nom { fill: var(--ink); }
+.map .spot:focus { outline: none; }
+.map .spot:focus-visible .ring,
+.map .spot:focus-visible .dot { stroke: var(--ink); stroke-width: 2; }
+
+@media (prefers-reduced-motion: reduce) { .map .dot { transition: none; } }
+
+/* ------------------------------------------ consignes et confirmation */
+
+.timer[data-state="briefing"] .timer-inner,
+.timer[data-state="running"] .brief { display: none; }
+
+.brief { width: 100%; max-width: 420px; }
+
+.brief-duration {
+  margin: 10px 0 22px;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: -.03em;
+}
+
+.brief-list {
+  list-style: none;
+  margin: 0 0 30px;
+  padding: 0;
+  text-align: left;
+  font-size: 14.5px;
+  line-height: 1.5;
+}
+
+.brief-list li {
+  padding: 11px 0 11px 22px;
+  border-top: 1px solid var(--rule);
+  position: relative;
+}
+
+/* Une puce discrète : la lecture doit rester rapide. */
+.brief-list li::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 20px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ink);
+}
+
+.hold { display: grid; place-items: center; gap: 12px; }
+
+.hold-btn {
+  position: relative;
+  width: 112px;
+  height: 112px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--ink);
+  cursor: pointer;
+  /* Le maintien ne doit pas déclencher la sélection ni le menu contextuel. */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: none;
+}
+
+.hold-btn svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);   /* le remplissage part du haut */
+}
+
+.hold-track {
+  fill: none;
+  stroke: var(--rule);
+  stroke-width: 5;
+}
+
+.hold-fill {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 5;
+  stroke-linecap: round;
+}
+
+.hold-label {
+  position: relative;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: .01em;
+}
+
+.hold-btn.held { transform: scale(.97); }
+.hold-btn.held .hold-label { opacity: .6; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .hold-btn { transition: transform 160ms ease; }
+}
+
+.brief .link-btn { margin-top: 22px; }
