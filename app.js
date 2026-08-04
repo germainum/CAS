@@ -9,7 +9,7 @@
 // toujours quelque chose, hors ligne compris, en signalant l'âge de la donnée.
 
 import {
-  CFG, SPOTS, advice, bestReading, isStale, parseMeasuredStations, parseSeries,
+  CFG, SPOTS, advice, asArray, bestReading, isStale, parseMeasuredStations, parseSeries,
   parseStationMeta, toDate, urlLatestTemperature, urlModelPoint, urlStationMeta,
 } from './sources.js';
 
@@ -52,6 +52,17 @@ function toast(msg) {
 
 /* -------------------------------------------------------------------- réseau */
 
+// Résumé d'URL pour le diagnostic : hôte et chemin, sans schéma ni clé d'app.
+function shortUrl(url) {
+  try {
+    const u = new URL(url);
+    const tail = `${u.host}${u.pathname}`;
+    return tail.length > 96 ? `${tail.slice(0, 93)}…` : tail;
+  } catch {
+    return url;
+  }
+}
+
 async function getJSON(url) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), CFG.timeoutMs);
@@ -60,7 +71,9 @@ async function getJSON(url) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   } catch (err) {
-    throw new Error(err.name === 'AbortError' ? 'délai dépassé' : err.message);
+    // L'URL fait partie du diagnostic : sans elle, « Load failed » n'apprend rien.
+    const reason = err.name === 'AbortError' ? 'délai dépassé' : err.message;
+    throw new Error(`${reason} — ${shortUrl(url)}`);
   } finally {
     clearTimeout(timer);
   }
@@ -96,13 +109,17 @@ async function fetchStationMeta() {
 
   for (const path of ['/locations', '/stations']) {
     try {
-      const meta = parseStationMeta(await getJSON(urlStationMeta(path)));
+      const raw = await getJSON(urlStationMeta(path));
+      const meta = parseStationMeta(raw);
       if (meta) {
         cacheSet('stationMeta', meta);
-        note('existenz' + path, true, `${Object.keys(meta).length} stations`);
+        const located = Object.values(meta).filter((m) => m.lat != null).length;
+        note('existenz' + path, true, `${Object.keys(meta).length} stations, ${located} géolocalisées`);
         return meta;
       }
-      note('existenz' + path, false, 'aucune station exploitable');
+      // Réponse reçue mais illisible : le nombre d'entrées lues situe le problème.
+      note('existenz' + path, false,
+        `aucune station exploitable sur ${asArray(raw).length} entrée(s) — clés : ${Object.keys(raw || {}).slice(0, 6).join(', ') || '∅'}`);
     } catch (err) {
       note('existenz' + path, false, err.message);
     }
@@ -112,9 +129,11 @@ async function fetchStationMeta() {
 
 async function fetchMeasuredStations() {
   const raw = await getJSON(urlLatestTemperature());
+  const received = asArray(raw).length;
   const meta = await fetchStationMeta();
   const list = parseMeasuredStations(raw, meta);
-  note('existenz/latest', true, `${list.length} station(s) sur le Léman`);
+  note('existenz/latest', list.length > 0,
+    `${list.length} station(s) sur le Léman, ${received} enregistrement(s) reçu(s)`);
   return list;
 }
 

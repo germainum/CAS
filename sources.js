@@ -45,10 +45,19 @@ export function asArray(payload) {
   if (Array.isArray(payload)) return payload;
   const inner = pick(payload, 'payload', 'data', 'results', 'stations', 'locations');
   if (Array.isArray(inner)) return inner;
-  if (payload && typeof payload === 'object') {
-    return Object.values(payload).filter((v) => v && typeof v === 'object' && !Array.isArray(v));
-  }
-  return [];
+
+  // Certaines réponses indexent les enregistrements par identifiant au lieu de
+  // les lister. La clé porte alors le numéro de station : on la réinjecte, sans
+  // quoi l'enregistrement devient inexploitable.
+  const map = (inner && typeof inner === 'object') ? inner
+    : (payload && typeof payload === 'object') ? payload : null;
+  if (!map) return [];
+
+  return Object.entries(map)
+    .filter(([, v]) => v && typeof v === 'object' && !Array.isArray(v))
+    .map(([key, v]) => (pick(v, 'loc', 'id', 'station', 'nr', 'code', 'key') == null
+      ? { loc: key, ...v }
+      : v));
 }
 
 export function toDate(ts) {

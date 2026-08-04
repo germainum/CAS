@@ -5,7 +5,7 @@
 import assert from 'node:assert/strict';
 
 import {
-  CFG, SPOTS, advice, bestReading, distanceKm, isStale, parseMeasuredStations,
+  CFG, SPOTS, advice, asArray, bestReading, distanceKm, isStale, parseMeasuredStations,
   parseSeries, parseStationMeta, stampUTC, toDate, urlModelPoint,
 } from '../sources.js';
 
@@ -83,6 +83,43 @@ test('parseStationMeta accepte les noms de champs alternatifs', () => {
 test('parseStationMeta renvoie null si rien d’exploitable', () => {
   assert.equal(parseStationMeta({ ok: false, payload: [] }), null);
   assert.equal(parseStationMeta(null), null);
+});
+
+// Forme observée en production : payload est un objet indexé par numéro de
+// station, et non une liste. La clé porte alors l'identifiant.
+test('parseStationMeta lit un payload indexé par numéro de station', () => {
+  const meta = parseStationMeta({
+    ok: true,
+    payload: {
+      2027: { name: 'Genève, Sécheron', water: 'Lac Léman', lat: 46.2205, lon: 6.1478 },
+      2135: { name: 'Basel, Rheinhalle', water: 'Rhein', lat: 47.559, lon: 7.59 },
+    },
+  });
+  assert.deepEqual(Object.keys(meta).sort(), ['2027', '2135']);
+  assert.equal(meta['2027'].name, 'Genève, Sécheron');
+  assert.equal(meta['2027'].lat, 46.2205);
+});
+
+test('asArray réinjecte la clé sans écraser un identifiant déjà présent', () => {
+  assert.deepEqual(asArray({ payload: { abc: { loc: '2027', v: 1 } } }), [{ loc: '2027', v: 1 }]);
+  assert.deepEqual(asArray({ payload: { 2027: { v: 1 } } }), [{ loc: '2027', v: 1 }]);
+  assert.deepEqual(asArray({ ok: true, status: 200 }), []);
+  assert.deepEqual(asArray(null), []);
+  assert.deepEqual(asArray([{ loc: '1' }]), [{ loc: '1' }]);
+});
+
+test('les mesures indexées par station sont exploitées de la même façon', () => {
+  const list = parseMeasuredStations({
+    payload: {
+      2027: { parameter: 'temperature', value: 21.4, timestamp: 1785844800 },
+      2135: { parameter: 'temperature', value: 24.1, timestamp: 1785844800 },
+    },
+  }, {
+    2027: { name: 'Genève, Sécheron', water: 'Lac Léman', lat: 46.2205, lon: 6.1478 },
+    2135: { name: 'Basel, Rheinhalle', water: 'Rhein', lat: 47.559, lon: 7.59 },
+  });
+  assert.deepEqual(list.map((s) => s.id), ['2027']);
+  assert.equal(list[0].name, 'Genève, Sécheron');
 });
 
 console.log('\nmesures in situ (existenz.ch)');
