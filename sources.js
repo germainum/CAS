@@ -12,6 +12,9 @@ export const CFG = {
   futureDays: 2,
   nearStationKm: 12,     // au-delà, une station cesse de représenter le lieu choisi
   staleAfterMs: 6 * 3600 * 1000,
+  // Les métadonnées de stations changent rarement, mais une version incomplète ne
+  // doit pas s'installer pour une semaine : un jour suffit à limiter les dégâts.
+  metaCacheMs: 24 * 3600 * 1000,
   timeoutMs: 12000,
   autoRefreshMs: 15 * 60 * 1000,
   // Emprise du Léman, volontairement large : sert à isoler les stations du lac.
@@ -139,14 +142,24 @@ export function snapshotAge(raw, now = Date.now()) {
 
 export function parseStationMeta(raw) {
   const meta = {};
-  for (const s of asArray(raw)) {
-    const id = String(pick(s, 'loc', 'id', 'station', 'nr', 'code', 'key') ?? '');
+  for (const row of asArray(raw)) {
+    // existenz imbrique les informations utiles dans `details`. Attention : le
+    // champ `id` de premier niveau n'est qu'un rang (1, 2, 3…), pas le numéro de
+    // station — celui-ci est `details.id`, et se retrouve aussi dans `name`.
+    const d = pick(row, 'details', 'station', 'properties') || row;
+
+    const id = String(pick(d, 'id', 'loc', 'nr', 'code')
+      ?? pick(row, 'loc', 'name', 'key') ?? '');
     if (!id) continue;
-    const lat = Number(pick(s, 'lat', 'latitude', 'wgs84lat', 'y'));
-    const lon = Number(pick(s, 'lon', 'lng', 'longitude', 'wgs84lng', 'x'));
+
+    const lat = Number(pick(d, 'lat', 'latitude', 'wgs84lat', 'y'));
+    const lon = Number(pick(d, 'lon', 'lng', 'longitude', 'wgs84lng', 'x'));
+
     meta[id] = {
-      name: String(pick(s, 'name', 'label', 'title', 'loc_name') ?? id),
-      water: String(pick(s, 'water', 'waterbody', 'water_body', 'river', 'lake') ?? ''),
+      name: String(pick(d, 'name', 'label', 'title', 'loc_name') ?? id),
+      water: String(pick(d, 'water-body-name', 'water', 'waterbody', 'water_body',
+        'river', 'lake') ?? ''),
+      kind: String(pick(d, 'water-body-type', 'type') ?? ''),
       lat: isFinite(lat) ? lat : null,
       lon: isFinite(lon) ? lon : null,
     };
@@ -161,10 +174,11 @@ const LEMAN_NAME = /l[ée]man|genfersee|lake\s*geneva|gen[eè]ve|geneva|rh[oô]n
 export function parseMeasuredStations(raw, meta, bbox = CFG.bbox) {
   const out = [];
   for (const row of asArray(raw)) {
-    const param = String(pick(row, 'parameter', 'param') ?? 'temperature');
+    // existenz abrège : `par` pour le paramètre, `val` pour la valeur.
+    const param = String(pick(row, 'par', 'parameter', 'param') ?? 'temperature');
     if (!/temp/i.test(param)) continue;
 
-    const value = Number(pick(row, 'value', 'val', 'temperature'));
+    const value = Number(pick(row, 'val', 'value', 'temperature'));
     if (!plausible(value)) continue;
 
     const id = String(pick(row, 'loc', 'location', 'station', 'id') ?? '');
