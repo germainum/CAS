@@ -5,7 +5,7 @@
 import assert from 'node:assert/strict';
 
 import {
-  CFG, SPOTS, advice, asArray, bestReading, distanceKm, isStale, parseMeasuredStations,
+  CFG, SPOTS, asArray, bestReading, distanceKm, isStale, mood, parseMeasuredStations,
   parseSeries, parseSnapshot, parseStationMeta, snapshotAge, stampUTC, toDate, urlModelPoint,
 } from '../sources.js';
 
@@ -375,15 +375,34 @@ test('la distance de rattachement respecte la configuration', () => {
   assert.ok(distanceKm(SPOTS.find((s) => s.key === 'vevey'), loin[0].coords) > CFG.nearStationKm);
 });
 
-console.log('\nindications de baignade');
+console.log('\naffirmation et bande de couleur');
 
-test('les paliers de conseil couvrent toute la plage', () => {
-  assert.match(advice(4), /Glacial/);
-  assert.match(advice(13), /Froid/);
-  assert.match(advice(19.5), /agréable/i);
-  assert.match(advice(26), /chaude/);
-  assert.equal(advice(null), '');
-  assert.equal(advice(NaN), '');
+test('chaque palier donne un adjectif, une remarque et une bande', () => {
+  for (const t of [2, 9, 13, 16, 19.5, 22.5, 27]) {
+    const m = mood(t);
+    assert.ok(m.adj && m.aside && m.band, `palier incomplet à ${t} °C`);
+    assert.match(m.band, /^(cold|cool|fresh|good|warm)$/);
+  }
+});
+
+test('les adjectifs suivent la température', () => {
+  assert.equal(mood(4).adj, 'glaciale');
+  assert.equal(mood(13).adj, 'froide');
+  assert.equal(mood(16).adj, 'fraîche');
+  assert.equal(mood(19.5).adj, 'bonne');
+  assert.equal(mood(27).adj, 'chaude');
+});
+
+test('les bandes vont du froid au chaud sans trou', () => {
+  const bands = [0, 5, 10, 13, 16, 19, 22, 25, 30].map((t) => mood(t).band);
+  assert.deepEqual(bands, ['cold', 'cold', 'cold', 'cool', 'fresh', 'good', 'good', 'warm', 'warm']);
+});
+
+test('une valeur absente donne une bande neutre, pas une erreur', () => {
+  for (const bad of [null, undefined, NaN, 'chaud']) {
+    assert.equal(mood(bad).band, 'unknown');
+    assert.equal(mood(bad).adj, 'inconnue');
+  }
 });
 
 console.log(`\n${passed} tests passés${process.exitCode ? ' — échecs ci-dessus' : ''}`);

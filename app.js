@@ -9,7 +9,7 @@
 // toujours quelque chose, hors ligne compris, en signalant l'âge de la donnée.
 
 import {
-  CFG, SPOTS, advice, asArray, bestReading, isStale, parseMeasuredStations, parseSeries,
+  CFG, SPOTS, asArray, bestReading, isStale, mood, parseMeasuredStations, parseSeries,
   parseSnapshot, parseStationMeta, snapshotAge, toDate, urlLatestTemperature,
   urlModelPoint, urlModelSnapshot, urlStationMeta,
 } from './sources.js';
@@ -35,6 +35,19 @@ function formatAge(value) {
   if (h < 24) return `il y a ${h} h`;
   const d = Math.round(h / 24);
   return d === 1 ? 'hier' : `il y a ${d} jours`;
+}
+
+// Deuxième ligne de la lecture chiffrée, tenue courte : elle est en capitales
+// sous le nom du lieu et ne doit pas se casser sur trois lignes.
+// « mesure · Chillon » + 25 min → « CHILLON · 25 MIN », et le nom de la station
+// disparaît quand il répète celui du lieu.
+function shortSource(label, at) {
+  const age = formatAge(at).replace(/^il y a /, '');
+  const station = /^mesure/.test(label) ? label.replace(/^mesure\s*·\s*/, '') : null;
+  const head = station
+    ? (station.toLowerCase() === currentSpot.name.toLowerCase() ? 'mesure' : station)
+    : label;
+  return [head, age].filter(Boolean).join(' · ');
 }
 
 function note(source, ok, detail) {
@@ -180,10 +193,9 @@ async function fetchModelSeries(spot) {
 /* ----------------------------------------------------------------- rendu UI */
 
 function renderSpots() {
-  $('spots').replaceChildren(...SPOTS.map((spot) => {
+  $('places').replaceChildren(...SPOTS.map((spot) => {
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = 'chip';
     b.textContent = spot.name;
     b.setAttribute('role', 'tab');
     b.addEventListener('click', () => selectSpot(spot));
@@ -192,7 +204,7 @@ function renderSpots() {
 }
 
 function markSelectedChip() {
-  [...$('spots').children].forEach((b, i) => {
+  [...$('places').children].forEach((b, i) => {
     const selected = SPOTS[i].key === currentSpot.key;
     b.setAttribute('aria-selected', String(selected));
     if (selected) b.scrollIntoView({ inline: 'center', block: 'nearest' });
@@ -200,20 +212,18 @@ function markSelectedChip() {
 }
 
 function renderHero({ value, at, kind, label }) {
-  $('heroPlace').textContent = currentSpot.sub
-    ? `${currentSpot.name} · ${currentSpot.sub}`
-    : currentSpot.name;
-  $('heroValue').textContent = formatTemp(value);
+  const { adj, aside, band } = mood(value);
 
-  const badge = $('heroBadge');
-  badge.className = `badge ${kind || ''}`;
-  badge.textContent = label;
+  // La couleur du fond suit la température : elle informe avant le chiffre.
+  document.body.dataset.band = band;
+  $('adjective').textContent = adj;
+  $('aside').textContent = aside;
+  $('value').textContent = formatTemp(value);
 
-  $('heroAge').textContent = formatAge(at);
-  $('heroAdvice').textContent = value == null
-    ? 'Aucune donnée disponible pour le moment.'
-    : advice(value);
-  document.querySelector('.hero').classList.toggle('stale', value != null && isStale(at));
+  $('readoutPlace').textContent = currentSpot.name;
+  $('readoutSource').textContent = value == null ? label : shortSource(label, at);
+
+  document.querySelector('.readout').classList.toggle('stale', value != null && isStale(at));
 }
 
 function renderStations(list) {
@@ -271,23 +281,28 @@ function renderChart(points) {
   const past = points.filter((p) => p.at.getTime() <= now);
   const future = points.filter((p) => p.at.getTime() >= now);
 
-  const grid = [lo, (lo + hi) / 2, hi].map((v) =>
-    `<line class="grid" x1="${padL}" y1="${y(v).toFixed(1)}" x2="${W - padR}" y2="${y(v).toFixed(1)}"/>`
-    + `<text class="axis" x="0" y="${(y(v) + 3).toFixed(1)}">${Math.round(v)}°</text>`).join('');
+  // Pas de grille : une ligne de base, et les extrêmes annotés au plus près.
+  const extremes = [
+    { v: Math.max(...values), anchor: 'start' },
+    { v: Math.min(...values), anchor: 'start' },
+  ].map(({ v }) => `<text class="axis" x="0" y="${(y(v) + 3).toFixed(1)}">`
+    + `${v.toFixed(1).replace('.', ',')}°</text>`).join('');
+
+  const baseline = `<line class="base" x1="${padL}" y1="${H - padB}" x2="${W - padR}" y2="${H - padB}"/>`;
 
   const days = [];
   for (const d = new Date(t0); d.getTime() <= t1; d.setDate(d.getDate() + 1)) {
     const midnight = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
     if (midnight <= t0 || midnight >= t1) continue;
-    days.push(`<text class="axis" x="${x(midnight).toFixed(1)}" y="${H - 4}" text-anchor="middle">`
-      + `${new Date(midnight).toLocaleDateString('fr-CH', { weekday: 'short' })}</text>`);
+    days.push(`<text class="axis" x="${x(midnight).toFixed(1)}" y="${H - 6}" text-anchor="middle">`
+      + `${new Date(midnight).toLocaleDateString('fr-CH', { weekday: 'short' }).replace('.', '').toUpperCase()}</text>`);
   }
 
   const marker = past.length ? past[past.length - 1] : points[0];
 
   box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img"`
     + ` aria-label="Température de l'eau sur ${CFG.pastDays + CFG.futureDays} jours">`
-    + grid + days.join('')
+    + baseline + extremes + days.join('')
     + (past.length > 1 ? `<path class="line" d="${path(past)}"/>` : '')
     + (future.length > 1 ? `<path class="line line-future" d="${path(future)}"/>` : '')
     + `<circle class="now" cx="${x(marker.at.getTime()).toFixed(1)}" cy="${y(marker.value).toFixed(1)}" r="3.5"/>`

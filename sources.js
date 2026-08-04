@@ -265,13 +265,25 @@ export function bestReading(spot, stations, series, now = Date.now()) {
   return { value: null, at: null, kind: 'error', label: 'indisponible' };
 }
 
-export function advice(t) {
-  if (typeof t !== 'number' || !isFinite(t)) return '';
-  if (t < 8)  return 'Glacial. Immersion très brève, jamais seul.';
-  if (t < 12) return 'Très froid : quelques minutes tout au plus.';
-  if (t < 15) return 'Froid, la respiration se coupe. Combinaison bienvenue.';
-  if (t < 18) return 'Frais, mais ça se fait pour les habitués.';
-  if (t < 21) return 'Baignade agréable, l’entrée reste vive.';
-  if (t < 24) return 'Très bonne température pour nager.';
-  return 'Eau chaude, comme une piscine.';
+// L'affirmation portée par la page : un adjectif, une remarque sèche, et la
+// bande de couleur qui teinte le fond. « band » pilote le dégradé.
+const MOODS = [
+  { max: 8,        band: 'cold',  adj: 'glaciale',   aside: 'Trempez un orteil, vous serez convaincu.' },
+  { max: 12,       band: 'cold',  adj: 'mordante',   aside: 'La respiration se coupe dans les cinq premières secondes.' },
+  { max: 15,       band: 'cool',  adj: 'froide',     aside: 'Les habitués y vont. Pas longtemps.' },
+  { max: 18,       band: 'fresh', adj: 'fraîche',    aside: 'Vive à l’entrée, supportable ensuite.' },
+  { max: 21,       band: 'good',  adj: 'bonne',      aside: 'Aucune excuse valable.' },
+  { max: 24,       band: 'good',  adj: 'excellente', aside: 'C’est le moment.' },
+  { max: Infinity, band: 'warm',  adj: 'chaude',     aside: 'Autant dire une piscine.' },
+];
+
+const UNKNOWN = {
+  band: 'unknown',
+  adj: 'inconnue',
+  aside: 'Aucune source ne répond pour l’instant.',
+};
+
+export function mood(t) {
+  if (typeof t !== 'number' || !isFinite(t)) return UNKNOWN;
+  return MOODS.find((m) => t < m.max) ?? MOODS[MOODS.length - 1];
 }
