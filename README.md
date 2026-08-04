@@ -31,9 +31,14 @@ rafraîchir.
 - Une indication de baignade, sans valeur officielle.
 - Un **minuteur de bain froid** et les règles de sécurité qui vont avec.
 
-Dix lieux sont proposés, des Pâquis au Bouveret. Pour en ajouter, complétez la
-constante `SPOTS` dans `sources.js` : le point doit se situer **sur l'eau**, sinon
-la simulation ne renvoie rien.
+Dix lieux sont proposés, des Pâquis au Bouveret. On passe de l'un à l'autre par
+le ruban en bas d'écran, par **balayage horizontal** sur le premier écran, ou par
+les flèches du clavier. Le balayage cède la place au défilement dès que le geste
+est vertical, et ne se déclenche pas depuis le ruban, qui défile pour son propre
+compte. Aux extrémités, il s'arrête plutôt que de boucler.
+
+Pour ajouter un lieu, complétez la constante `SPOTS` dans `sources.js` : le point
+doit se situer **sur l'eau**, sinon la simulation ne renvoie rien.
 
 ## Minuteur de bain froid
 
@@ -118,7 +123,7 @@ utile depuis l'iPhone lui-même, il liste les appels réussis ou échoués.
 | `sw.js` | service worker : réseau d'abord, cache en secours |
 | `manifest.webmanifest` | nom, icônes, mode plein écran |
 | `tools/build-model-data.mjs` | précalcul de `data/model.json` dans la CI |
-| `tools/test-parsers.mjs` | 57 tests sur `sources.js` |
+| `tools/test-parsers.mjs` | 62 tests sur `sources.js` |
 | `tools/check-sources.mjs` | vérification des API en conditions réelles |
 | `tools/make-icons.py` | génération des icônes PNG |
 

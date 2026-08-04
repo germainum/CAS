@@ -301,6 +301,32 @@ const UNKNOWN = {
   aside: 'Aucune source ne répond pour l’instant.',
 };
 
+/* ---------------------------------------------------------------- gestes */
+
+export const SWIPE = {
+  minX: 45,        // en deçà, c'est une touche, pas un balayage
+  ratio: 1.6,      // le geste doit être franchement horizontal
+  quickMs: 900,    // au-delà, il faut une amplitude plus nette
+  longX: 90,
+};
+
+// Décide si un déplacement de pointeur est un balayage, et dans quel sens.
+// Renvoie 'next', 'prev' ou null. Un geste vertical n'est jamais un balayage :
+// c'est le défilement de la page, qui doit rester intact.
+export function swipeDecision(dx, dy, dt) {
+  if (Math.abs(dx) < SWIPE.minX) return null;
+  if (Math.abs(dx) < Math.abs(dy) * SWIPE.ratio) return null;
+  if (dt > SWIPE.quickMs && Math.abs(dx) < SWIPE.longX) return null;
+  return dx < 0 ? 'next' : 'prev';
+}
+
+// Index atteint depuis `from` : borné aux extrémités plutôt que circulaire, pour
+// que le premier et le dernier lieu restent des repères.
+export function nextIndex(from, direction, total) {
+  const step = direction === 'next' ? 1 : direction === 'prev' ? -1 : 0;
+  return Math.min(total - 1, Math.max(0, from + step));
+}
+
 /* ------------------------------------------------------------ bain froid */
 
 // Règle d'usage en eau froide : une minute d'immersion par degré. C'est un
