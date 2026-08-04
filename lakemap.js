@@ -37,7 +37,7 @@ const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replac
 const fmt = (v) => (typeof v === 'number' && isFinite(v) ? v.toFixed(1).replace('.', ',') : '--');
 
 // Rend la carte dans `box`. `temps` associe une clé de lieu à sa température.
-export function renderLakeMap(box, { temps = {}, selectedKey, onSelect } = {}) {
+export function renderLakeMap(box, { temps = {}, selectedKey, onSelect, user = null } = {}) {
   const { points, project } = projectPoints(LAKE_OUTLINE, { width: W, height: H, pad: 36 });
   const shore = `${points.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`).join('')}Z`;
 
@@ -62,9 +62,20 @@ export function renderLakeMap(box, { temps = {}, selectedKey, onSelect } = {}) {
       + '</g>';
   }).join('');
 
+  // Position de l'utilisateur, si elle est connue et dans le cadre.
+  let me = '';
+  if (user && isFinite(user.lat) && isFinite(user.lon)) {
+    const [ux, uy] = project(user.lat, user.lon);
+    if (ux > -12 && ux < W + 12 && uy > -12 && uy < H + 12) {
+      me = `<g class="me"><circle class="me-halo" cx="${ux.toFixed(1)}" cy="${uy.toFixed(1)}" r="9"/>`
+        + `<circle class="me-dot" cx="${ux.toFixed(1)}" cy="${uy.toFixed(1)}" r="3.2"/>`
+        + '<title>Votre position</title></g>';
+    }
+  }
+
   box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img"`
     + ' aria-label="Carte du Léman et température de l’eau par lieu">'
-    + `<path class="shore" d="${shore}"/>${marks}</svg>`;
+    + `<path class="shore" d="${shore}"/>${me}${marks}</svg>`;
 
   if (!onSelect) return;
 

@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 
 import {
   BATH_MAX_MINUTES, CFG, LAKE_OUTLINE, SPOTS, asArray, bathPhase, bathPlan, bestReading,
-  distanceKm, pointInPolygon, projectPoints, snapshotCurrentTemps,
+  breathCue, distanceKm, nearestSpot, pointInPolygon, projectPoints, snapshotCurrentTemps,
   formatClock, isStale, mood, nextIndex, parseMeasuredStations, swipeDecision,
   parseSeries, parseSnapshot, parseStationMeta, snapshotAge, stampUTC, toDate, urlModelPoint,
 } from '../sources.js';
@@ -531,6 +531,73 @@ test('snapshotCurrentTemps prend, pour chaque lieu, le point le plus proche de m
   assert.equal(temps.geneve, 21);
   assert.equal(temps.vevey, 19, 'le plus proche de maintenant, même dans le passé');
   assert.ok(!('vide' in temps), 'un lieu sans point ne doit pas apparaître');
+});
+
+console.log('\nrespiration guidée');
+
+test('quatre secondes d’inspiration, six d’expiration', () => {
+  assert.equal(breathCue(0).word, 'Inspirez');
+  assert.equal(breathCue(3.9).phase, 'in');
+  assert.equal(breathCue(4).phase, 'out');
+  assert.equal(breathCue(9.9).phase, 'out');
+  assert.equal(breathCue(10).phase, 'in', 'le cycle se répète');
+});
+
+test('le décompte affiché ne descend jamais à zéro', () => {
+  for (const t of [0, 1.5, 3.99, 4, 7, 9.99]) {
+    const cue = breathCue(t);
+    assert.ok(cue.seconds >= 1 && cue.seconds <= 6, `${t} s → ${cue.seconds}`);
+  }
+});
+
+test('la progression va de zéro à un dans chaque phase', () => {
+  assert.ok(Math.abs(breathCue(0).progress - 0) < 1e-9);
+  assert.ok(Math.abs(breathCue(2).progress - 0.5) < 1e-9);
+  assert.ok(Math.abs(breathCue(4).progress - 0) < 1e-9);
+  assert.ok(Math.abs(breathCue(7).progress - 0.5) < 1e-9);
+});
+
+test('un temps écoulé négatif ne casse pas le cycle', () => {
+  const cue = breathCue(-1);
+  assert.equal(cue.phase, 'out');
+  assert.ok(cue.progress >= 0 && cue.progress <= 1);
+});
+
+console.log('\nlieu le plus proche');
+
+test('depuis une rive, le lieu retenu est bien le plus proche', () => {
+  // Depuis Ouchy, à Lausanne.
+  const a = nearestSpot({ lat: 46.5070, lon: 6.6280 });
+  assert.equal(a.spot.key, 'lausanne');
+  assert.ok(a.km < 3, `${a.km.toFixed(1)} km`);
+
+  // Depuis les quais de Montreux.
+  const b = nearestSpot({ lat: 46.4340, lon: 6.9110 });
+  assert.equal(b.spot.key, 'montreux');
+
+  // Depuis Thonon, sur la rive française.
+  const c = nearestSpot({ lat: 46.3760, lon: 6.4780 });
+  assert.equal(c.spot.key, 'thonon');
+});
+
+test('depuis loin, un lieu est tout de même désigné, avec sa distance', () => {
+  const zurich = nearestSpot({ lat: 47.3769, lon: 8.5417 });
+  assert.ok(zurich, 'un lieu doit toujours être proposé');
+  assert.ok(zurich.km > 150, `${zurich.km.toFixed(0)} km : l’app doit pouvoir le signaler`);
+});
+
+test('une position invalide ne désigne aucun lieu', () => {
+  assert.equal(nearestSpot(null), null);
+  assert.equal(nearestSpot({ lat: NaN, lon: 6.6 }), null);
+  assert.equal(nearestSpot({ lat: 46.5 }), null);
+  assert.equal(nearestSpot({ lat: 46.5, lon: 6.6 }, []), null);
+});
+
+test('le lieu le plus proche est unique et cohérent avec distanceKm', () => {
+  const from = { lat: 46.4500, lon: 6.7000 };
+  const near = nearestSpot(from);
+  const toutes = SPOTS.map((s) => distanceKm(from, s));
+  assert.ok(Math.abs(near.km - Math.min(...toutes)) < 1e-9);
 });
 
 console.log('\nbalayage entre les lieux');

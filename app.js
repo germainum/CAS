@@ -12,9 +12,9 @@ import { initBath, setWaterTemperature } from './bath.js';
 import { renderLakeMap } from './lakemap.js';
 import {
   CFG, SPOTS, asArray, bestReading, isStale, mood, nextIndex, parseMeasuredStations,
-  parseSeries, parseSnapshot, parseStationMeta, snapshotAge, snapshotCurrentTemps,
-  swipeDecision, toDate, urlLatestTemperature, urlModelPoint, urlModelSnapshot,
-  urlStationMeta,
+  nearestSpot, parseSeries, parseSnapshot, parseStationMeta, snapshotAge,
+  snapshotCurrentTemps, swipeDecision, toDate, urlLatestTemperature, urlModelPoint,
+  urlModelSnapshot, urlStationMeta,
 } from './sources.js';
 
 const $ = (id) => document.getElementById(id);
@@ -22,11 +22,17 @@ const diagnostics = [];
 let currentSpot = SPOTS[0];
 let refreshing = false;
 let spotTemps = {};       // température par lieu, pour la carte
+let lastSeries = [];      // dernier rendu, pour repeindre sans refaire le réseau
+let lastHint = 'modèle Eawag';
 
 /* ------------------------------------------------------------------ affichage */
 
 const formatTemp = (v) =>
   typeof v === 'number' && isFinite(v) ? v.toFixed(1).replace('.', ',') : '--';
+
+// Sous dix kilomètres la décimale a du sens ; au-delà, elle n'apporte rien.
+const formatKm = (km) =>
+  km < 10 ? km.toFixed(1).replace('.', ',') : String(Math.round(km));
 
 function formatAge(value) {
   const date = toDate(value);
@@ -148,9 +154,9 @@ async function fetchStationMeta() {
       const meta = parseStationMeta(raw);
       if (meta) {
         cacheSet('stationMeta', meta);
-        const located = geolocated(meta);
-        note('existenz' + path, located > 0,
-          `${Object.keys(meta).length} stations, ${located} géolocalisées`);
+        const withCoords = geolocated(meta);
+        note('existenz' + path, withCoords > 0,
+          `${Object.keys(meta).length} stations, ${withCoords} géolocalisées`);
         return meta;
       }
       // Réponse reçue mais illisible : le nombre d'entrées lues situe le problème.
@@ -224,50 +230,19 @@ function markSelectedChip() {
 }
 
 function renderHero({ value, at, kind, label }) {
-  const { adj, aside, band } = mood(value);
-
   // La couleur du fond suit la température : elle informe avant le chiffre.
-  document.body.dataset.band = band;
-  $('adjective').textContent = adj;
-  $('aside').textContent = aside;
+  document.body.dataset.band = mood(value).band;
   $('value').textContent = formatTemp(value);
 
-  $('readoutPlace').textContent = currentSpot.name;
+  $('readoutPlace').textContent = located?.key === currentSpot.key
+    ? `${currentSpot.name} · à ${formatKm(located.km)} km`
+    : currentSpot.name;
   $('readoutSource').textContent = value == null ? label : shortSource(label, at);
 
   document.querySelector('.readout').classList.toggle('stale', value != null && isStale(at));
 
   // Le minuteur se règle sur la valeur affichée : une minute par degré.
   setWaterTemperature(value);
-}
-
-function renderStations(list) {
-  const ul = $('stations');
-  if (!list || !list.length) {
-    const li = document.createElement('li');
-    li.className = 'st-empty';
-    li.textContent = 'Mesures officielles indisponibles (voir le diagnostic).';
-    ul.replaceChildren(li);
-    return;
-  }
-  ul.replaceChildren(...list.map((s) => {
-    const li = document.createElement('li');
-    const name = document.createElement('span');
-    name.className = 'st-name';
-    name.textContent = s.name;
-
-    const sub = document.createElement('span');
-    sub.className = 'st-sub';
-    sub.textContent = [s.water, formatAge(s.at)].filter(Boolean).join(' · ');
-    name.append(sub);
-
-    const val = document.createElement('span');
-    val.className = 'st-val';
-    val.textContent = `${formatTemp(s.value)} °C`;
-
-    li.append(name, val);
-    return li;
-  }));
 }
 
 function renderChart(points) {
@@ -331,7 +306,8 @@ const reviveSeries = (raw) => (raw || [])
   .filter((p) => !isNaN(p.at.getTime()) && isFinite(p.value));
 
 function paint(stations, series, hint = 'modèle Eawag') {
-  renderStations(stations);
+  lastSeries = series || [];
+  lastHint = hint;
   renderChart(series);
   renderHero(bestReading(currentSpot, stations, series));
   $('chartHint').textContent = hint;
@@ -342,6 +318,7 @@ function drawMap() {
   renderLakeMap($('map'), {
     temps: spotTemps,
     selectedKey: currentSpot.key,
+    user: located,
     onSelect: (key) => {
       const spot = SPOTS.find((s) => s.key === key);
       if (spot) selectSpot(spot);
@@ -423,7 +400,7 @@ function selectSpot(spot, direction = null) {
 // un balayage ne se distingue pas d'un rafraîchissement.
 function animateSwap(direction) {
   const cls = direction === 'next' ? 'enter-next' : 'enter-prev';
-  for (const el of document.querySelectorAll('.statement, .readout')) {
+  for (const el of document.querySelectorAll('.eyebrow, .readout')) {
     el.classList.remove('enter-next', 'enter-prev');
     // Forcer un recalcul relance l'animation même sur deux balayages successifs.
     void el.offsetWidth;
@@ -474,6 +451,79 @@ function enableSwipe() {
   });
 }
 
+/* --------------------------------------------------------- géolocalisation */
+
+// Position de l'utilisateur et lieu retenu, pour n'annoter la distance que
+// lorsqu'elle porte bien sur le lieu affiché.
+let located = null;    // { lat, lon, km, key }
+
+function askPosition() {
+  return new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(resolve, reject, {
+      // La précision fine ne servirait à rien : on cherche le lieu le plus
+      // proche parmi dix, distants de plusieurs kilomètres.
+      enableHighAccuracy: false,
+      timeout: 9000,
+      maximumAge: 5 * 60 * 1000,
+    });
+  });
+}
+
+const GEO_ERRORS = {
+  1: 'Localisation refusée',
+  2: 'Position indisponible',
+  3: 'Localisation trop lente',
+};
+
+// `silent` : lancement automatique au démarrage, sans message en cas d'échec.
+async function locate({ silent = false } = {}) {
+  if (!('geolocation' in navigator)) {
+    if (!silent) toast('Localisation non disponible');
+    return;
+  }
+  $('locate').classList.add('busy');
+  try {
+    const pos = await askPosition();
+    const coords = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+    const near = nearestSpot(coords, SPOTS);
+    if (!near) return;
+
+    located = { ...coords, km: near.km, key: near.spot.key };
+    cacheSet('geolocate', true);
+    note('position', true, `${near.spot.name} à ${near.km.toFixed(1)} km`);
+
+    if (near.spot.key === currentSpot.key) paint(cacheGet('stations'), lastSeries, lastHint);
+    else selectSpot(near.spot);
+
+    // Au-delà, l'utilisateur n'est manifestement pas au bord du lac : le dire
+    // vaut mieux que de laisser croire que la valeur le concerne.
+    if (!silent) {
+      toast(near.km > 40
+        ? `${near.spot.name}, le plus proche — à ${formatKm(near.km)} km de vous`
+        : `${near.spot.name}, à ${formatKm(near.km)} km de vous`);
+    }
+  } catch (err) {
+    if (err?.code === 1) cacheSet('geolocate', false);
+    note('position', false, GEO_ERRORS[err?.code] ?? err?.message ?? 'échec');
+    if (!silent) toast(GEO_ERRORS[err?.code] ?? 'Localisation impossible');
+  } finally {
+    $('locate').classList.remove('busy');
+  }
+}
+
+// Au démarrage, on ne relocalise que si l'autorisation est déjà acquise :
+// surgir sur une demande de permission à l'ouverture serait intrusif.
+async function locateIfAllowed() {
+  if (!('geolocation' in navigator)) return;
+  let allowed = cacheGet('geolocate') === true;
+  try {
+    const status = await navigator.permissions?.query({ name: 'geolocation' });
+    if (status?.state === 'granted') allowed = true;
+    if (status?.state === 'denied') allowed = false;
+  } catch { /* Permissions API absente : on s'en tient à la préférence stockée */ }
+  if (allowed) locate({ silent: true });
+}
+
 /* ------------------------------------------------------ iOS & cycle de vie */
 
 function maybeShowInstallHint() {
@@ -501,6 +551,7 @@ function init() {
   refresh({ silent: hadCache });
 
   $('refresh').addEventListener('click', () => refresh());
+  $('locate').addEventListener('click', () => locate());
 
   // Sur iOS l'app reste ouverte des jours : on rafraîchit au retour au premier plan.
   document.addEventListener('visibilitychange', () => {
@@ -511,6 +562,7 @@ function init() {
 
   enableSwipe();
   initBath();
+  locateIfAllowed();
   maybeShowInstallHint();
 
   if ('serviceWorker' in navigator) {
