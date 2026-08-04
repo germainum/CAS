@@ -86,9 +86,10 @@ quand une API amont change.
 
 ## Déploiement
 
-**Avec GitHub Actions** (workflow `.github/workflows/pages.yml` inclus) :
-dans *Settings → Pages*, choisissez **Source : GitHub Actions**. Chaque poussée sur
-la branche par défaut lance les tests puis publie le site.
+**Avec GitHub Actions** (workflow `.github/workflows/pages.yml` inclus) : rien à
+régler. Le workflow active lui-même GitHub Pages en mode « GitHub Actions »
+(`enablement: true`) au premier passage. Chaque poussée sur la branche par défaut
+lance les tests puis publie le site ; une pull request se limite aux tests.
 
 **Sans Actions** : dans *Settings → Pages*, choisissez **Deploy from a branch**, la
 branche voulue et le dossier `/ (root)`. Le fichier `.nojekyll` garantit que tous

@@ -18,7 +18,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -38,8 +38,12 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/configure-pages@v5
+        with:
+          # Provisionne GitHub Pages en mode « GitHub Actions » si ce n'est pas
+          # déjà fait, au lieu d'échouer sur un dépôt où Pages n'est pas activé.
+          enablement: true
       # Le site est statique : la racine du dépôt est publiée telle quelle.
       - uses: actions/upload-pages-artifact@v3
         with:
