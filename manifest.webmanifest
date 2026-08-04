@@ -1,0 +1,19 @@
+{
+  "name": "Température du Léman",
+  "short_name": "Léman",
+  "description": "La température de l'eau du lac Léman, lieu par lieu.",
+  "lang": "fr",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#05253d",
+  "theme_color": "#05253d",
+  "categories": ["weather", "travel", "sports"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
