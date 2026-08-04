@@ -122,6 +122,68 @@ test('les mesures indexées par station sont exploitées de la même façon', ()
   assert.equal(list[0].name, 'Genève, Sécheron');
 });
 
+// ---------------------------------------------------------------------------
+// Formes réelles, relevées sur api.existenz.ch. Ce sont les fixtures qui
+// comptent : les précédentes étaient des hypothèses, celles-ci sont observées.
+// ---------------------------------------------------------------------------
+
+const REAL_LOCATIONS = {
+  source: 'Swiss Federal Office for the Environment FOEN / BAFU, Hydrology',
+  payload: {
+    2004: { id: 1, name: '2004', details: { id: '2004', name: 'Murten', 'water-body-name': 'Murtensee', 'water-body-type': 'lake', chx: 575500, chy: 199790, lat: 46.9308, lon: 7.1169 } },
+    2026: { id: 15, name: '2026', details: { id: '2026', name: 'Chillon', 'water-body-name': 'Lac Léman', 'water-body-type': 'lake', chx: 560720, chy: 140490, lat: 46.4146, lon: 6.9277 } },
+    2027: { id: 16, name: '2027', details: { id: '2027', name: 'St-Prex', 'water-body-name': 'Lac Léman', 'water-body-type': 'lake', chx: 524940, chy: 148410, lat: 46.4828, lon: 6.4611 } },
+    2028: { id: 17, name: '2028', details: { id: '2028', name: 'Genève', 'water-body-name': 'Lac Léman', 'water-body-type': 'lake', chx: 500750, chy: 119390, lat: 46.2186, lon: 6.1524 } },
+    2135: { id: 70, name: '2135', details: { id: '2135', name: 'Bern, Schönau', 'water-body-name': 'Aare', 'water-body-type': 'river', lat: 46.9331, lon: 7.448 } },
+  },
+};
+
+const REAL_LATEST = {
+  source: 'Swiss Federal Office for the Environment FOEN / BAFU, Hydrology',
+  payload: [
+    { timestamp: 1785873600, loc: '2009', par: 'temperature', val: 10.9 },
+    { timestamp: 1785873600, loc: '2026', par: 'temperature', val: 22.44 },
+    { timestamp: 1785873600, loc: '2027', par: 'temperature', val: 24.51 },
+    { timestamp: 1785873600, loc: '2028', par: 'temperature', val: 25.06 },
+    { timestamp: 1785873600, loc: '2135', par: 'temperature', val: 22.69 },
+  ],
+};
+
+test('forme réelle : le numéro de station vient de details.id, pas du rang', () => {
+  const meta = parseStationMeta(REAL_LOCATIONS);
+  assert.deepEqual(Object.keys(meta).sort(), ['2004', '2026', '2027', '2028', '2135']);
+  assert.equal(meta['2027'].name, 'St-Prex');
+  assert.equal(meta['2027'].water, 'Lac Léman');
+  assert.equal(meta['2027'].kind, 'lake');
+  assert.equal(meta['2027'].lat, 46.4828);
+  assert.equal(meta['2027'].lon, 6.4611);
+});
+
+test('forme réelle : les trois stations du Léman sont retenues, les autres non', () => {
+  const list = parseMeasuredStations(REAL_LATEST, parseStationMeta(REAL_LOCATIONS));
+  assert.deepEqual(list.map((s) => s.name), ['Chillon', 'Genève', 'St-Prex']);
+  assert.deepEqual(list.map((s) => s.value), [22.44, 25.06, 24.51]);
+  assert.ok(!list.some((s) => s.name.startsWith('Bern')), 'Berne est hors du Léman');
+  assert.ok(!list.some((s) => s.id === '2009'), 'station sans métadonnées ni nom lémanique');
+});
+
+test('forme réelle : les abréviations par et val sont comprises', () => {
+  const list = parseMeasuredStations(REAL_LATEST, parseStationMeta(REAL_LOCATIONS));
+  const geneve = list.find((s) => s.name === 'Genève');
+  assert.equal(geneve.value, 25.06);
+  assert.equal(geneve.at.toISOString(), new Date(1785873600 * 1000).toISOString());
+  assert.deepEqual(geneve.coords, { lat: 46.2186, lon: 6.1524 });
+});
+
+test('forme réelle : la station de Genève alimente le grand affichage', () => {
+  const stations = parseMeasuredStations(REAL_LATEST, parseStationMeta(REAL_LOCATIONS))
+    .map((s) => ({ ...s, at: new Date(NOW - 20 * 60 * 1000) }));
+  const r = bestReading(SPOTS.find((s) => s.key === 'geneve'), stations, [], NOW);
+  assert.equal(r.kind, 'measured');
+  assert.equal(r.value, 25.06);
+  assert.match(r.label, /Genève/);
+});
+
 console.log('\nmesures in situ (existenz.ch)');
 
 const META = {

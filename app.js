@@ -82,7 +82,10 @@ async function getJSON(url) {
 
 /* --------------------------------------------------------------------- cache */
 
-const PREFIX = 'leman.v1.';
+// La version du préfixe invalide tout le cache local. À incrémenter dès qu'une
+// donnée mise en cache change de forme ou s'est révélée fausse — sans quoi les
+// appareils déjà utilisés conservent l'ancienne pendant des heures.
+const PREFIX = 'leman.v2.';
 
 function cacheSet(key, value) {
   try {
