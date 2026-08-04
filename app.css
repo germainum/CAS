@@ -1,7 +1,8 @@
 /* Température du Léman
  *
  * Parti pris typographique : une affirmation en très gros caractères, dont
- * l'adjectif est tracé en contour, et une lecture chiffrée en bas d'écran.
+ * l'adjectif est posé en filet face au noir des mots pleins, et une lecture
+ * chiffrée en bas d'écran.
  * Le fond est un dégradé diffus dont les teintes suivent la température de
  * l'eau — du violet glacé au pêche chaud : la couleur porte l'information
  * avant même la lecture du chiffre.
@@ -14,11 +15,6 @@
   --paper: #f2f5f9;
 
   --gutter: 22px;
-  /* Contour de l'adjectif, en unité relative pour rester proportionné à toutes
-     les tailles. Le tracé est centré sur le dessin de la lettre : il mord donc
-     aussi vers l'intérieur, et fermait les contrepoinçons du « a » et du « e »
-     du SF Pro Display Black. D'où cette valeur volontairement fine. */
-  --stroke: .023em;
 }
 
 /* Bandes de température : trois teintes par état, appliquées au dégradé. */
@@ -163,19 +159,15 @@ body {
   text-wrap: balance;
 }
 
-/* L'adjectif en contour : le mot que l'on retient. Une graisse en retrait du
-   900 des mots pleins, car des contrepoinçons plus ouverts encaissent mieux le
-   tracé — la différence de largeur est imperceptible, l'illisibilité non. */
+/* L'adjectif, le mot qui change, se distingue par un filet face au 900 des mots
+   pleins. Ce n'est pas le contour de la maquette d'origine : -webkit-text-stroke
+   trace aussi les arêtes des contours superposés du glyphe, ce qui barrait le
+   « a » et transformait le « e » en « € » sur SF Pro Display. Le défaut ne dépend
+   pas de l'épaisseur — d'où le changement de procédé, sans mode de défaillance. */
 .statement em {
   font-style: normal;
-  font-weight: 800;
-  -webkit-text-stroke: var(--stroke) var(--ink);
-  color: transparent;
-}
-
-/* Repli là où le contour n'existe pas : on distingue par l'opacité. */
-@supports not (-webkit-text-stroke: 1px black) {
-  .statement em { color: var(--ink); opacity: .42; }
+  font-weight: 300;
+  letter-spacing: -.03em;
 }
 
 .aside {
@@ -397,3 +389,186 @@ body {
   font-size: 13px;
   letter-spacing: .02em;
 }
+
+/* ------------------------------------------------------------- bain froid */
+
+.bath-plan { margin-bottom: 26px; }
+
+.bath-stepper {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.round {
+  width: 38px;
+  height: 38px;
+  flex: none;
+  border: 1px solid var(--rule);
+  border-radius: 50%;
+  background: none;
+  color: var(--ink);
+  font: 400 20px/1 -apple-system, BlinkMacSystemFont, sans-serif;
+  cursor: pointer;
+}
+
+.bath-duration {
+  margin: 0;
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+  font-size: 3.6rem;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.bath-unit {
+  font-size: .28em;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.bath-note {
+  margin: 14px 0 20px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.solid {
+  width: 100%;
+  padding: 15px 20px;
+  border: 0;
+  background: var(--ink);
+  color: var(--paper);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: .01em;
+  cursor: pointer;
+}
+
+.rules {
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.rules li {
+  padding: 12px 0;
+  border-top: 1px solid var(--rule);
+  color: var(--ink-soft);
+}
+
+.rules b { color: var(--ink); font-weight: 600; }
+
+/* ----------------------------------------------------- minuteur plein écran */
+
+.timer {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  padding: calc(env(safe-area-inset-top) + 24px) 24px calc(env(safe-area-inset-bottom) + 24px);
+  background: var(--paper);
+  /* La teinte reprend celle de la bande thermique en cours. */
+  background-image:
+    radial-gradient(70% 40% at 84% -6%, var(--c1) 0%, transparent 70%),
+    radial-gradient(60% 34% at 4% 10%, var(--c2) 0%, transparent 72%);
+  text-align: center;
+}
+
+.timer[hidden] { display: none; }
+
+.timer-inner { width: 100%; max-width: 420px; }
+
+.timer-phase {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.timer-clock {
+  margin: 10px 0 0;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+  font-size: clamp(4.6rem, 26vw, 7.5rem);
+  font-weight: 900;
+  line-height: .9;
+  letter-spacing: -.05em;
+  font-variant-numeric: tabular-nums;
+}
+
+.timer-hint {
+  margin: 14px auto 0;
+  max-width: 26ch;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.timer-bar {
+  margin: 26px 0 10px;
+  height: 2px;
+  background: var(--rule);
+}
+
+.timer-bar span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--ink);
+  transition: width 250ms linear;
+}
+
+.timer-meta, .timer-note {
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.timer-warn {
+  margin: 24px auto 0;
+  max-width: 32ch;
+  padding: 12px 14px;
+  border: 1px solid var(--rule);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+/* L'échéance et le dépassement doivent s'imposer, pas se deviner. */
+.timer[data-phase="exit"] .timer-clock { opacity: .82; }
+.timer[data-phase="done"] .timer-warn { background: var(--ink); color: var(--paper); border-color: transparent; }
+.timer[data-phase="done"] .timer-clock { animation: pulse 1.4s ease-in-out infinite; }
+
+@keyframes pulse { 50% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) {
+  .timer[data-phase="done"] .timer-clock { animation: none; }
+  .timer-bar span { transition: none; }
+}
+
+.timer-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-top: 26px;
+}
+
+.timer-actions .solid { max-width: 260px; }
+
+/* Pendant l'immersion, la page derrière ne défile pas. */
+body.timing { overflow: hidden; }

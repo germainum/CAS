@@ -55,6 +55,40 @@
     <nav class="places" id="places" aria-label="Choisir un lieu"></nav>
   </section>
 
+  <!-- Préparer le bain : durée conseillée, minuteur, règles. -->
+  <section class="block bath">
+    <h2 class="micro">Bain froid <span class="micro-note">une minute par degré</span></h2>
+
+    <div class="bath-plan">
+      <div class="bath-stepper">
+        <button type="button" id="bathMinus" class="round" aria-label="Une minute de moins">−</button>
+        <p class="bath-duration"><span id="bathMinutes">--</span><span class="bath-unit">min</span></p>
+        <button type="button" id="bathPlus" class="round" aria-label="Une minute de plus">+</button>
+      </div>
+      <p class="bath-note" id="bathNote">Durée conseillée d'après la température.</p>
+      <button type="button" id="bathStart" class="solid">Démarrer le minuteur</button>
+    </div>
+
+    <ul class="rules">
+      <li><b>Jamais seul.</b> Un accompagnement est indispensable : crampe ou malaise arrivent sans prévenir.</li>
+      <li><b>Une minute par degré, au maximum.</b> Dix minutes à 10 °C. C'est un plafond, pas un objectif.</li>
+      <li><b>Respire lentement.</b> De grandes inspirations lentes contrent le choc thermique et calment le cœur.</li>
+      <li><b>Pas la tête la première.</b> Entrez progressivement ; un bonnet limite la perte de chaleur.</li>
+      <li><b>Restez près du bord.</b> La fatigue peut tomber d'un coup : il faut pouvoir sortir vite.</li>
+      <li><b>Sortez immédiatement</b> en cas d'euphorie inhabituelle ou de tremblements violents — ce sont les signes précurseurs d'hypothermie.</li>
+      <li><b>En cas de problème cardiaque ou de tension</b>, abstenez-vous et demandez un avis médical.</li>
+    </ul>
+
+    <p class="micro-note">
+      D'après
+      <a href="https://www.slrg.ch/fr/conseils-pour-la-nage-en-eau-froide" target="_blank" rel="noopener">la SSS</a>,
+      <a href="https://www.24heures.ch/bain-en-eau-froide-conseils-et-lieux-pour-se-lancer-358447963782" target="_blank" rel="noopener">24 heures</a>,
+      <a href="https://www.20min.ch/fr/story/bain-en-eau-froide-les-conseils-dun-expert-romand-294476565256" target="_blank" rel="noopener">20 minutes</a>
+      et <a href="https://www.wta.org/go-outside/trail-smarts/how-to-swim-safely-in-cold-water-lakes" target="_blank" rel="noopener">la WTA</a>.
+      Ces repères ne remplacent pas un avis médical.
+    </p>
+  </section>
+
   <!-- Détails, sous la ligne de flottaison. -->
   <section class="block">
     <h2 class="micro">Sept jours <span id="chartHint" class="micro-note">modèle Eawag</span></h2>
@@ -88,6 +122,25 @@
   </div>
 
   <div class="toast" id="toast" hidden></div>
+</div>
+
+<!-- Minuteur plein écran, pendant l'immersion. -->
+<div class="timer" id="timer" role="dialog" aria-label="Minuteur de bain froid" hidden>
+  <div class="timer-inner" aria-live="polite">
+    <p class="timer-phase" id="timerPhase">—</p>
+    <p class="timer-clock" id="timerClock">00:00</p>
+    <p class="timer-hint" id="timerHint"></p>
+    <div class="timer-bar"><span id="timerFill"></span></div>
+    <p class="timer-meta" id="timerMeta"></p>
+    <p class="timer-warn">
+      Sortez immédiatement en cas d'euphorie inhabituelle ou de tremblements violents.
+    </p>
+    <div class="timer-actions">
+      <button type="button" id="timerDone" class="solid">Je sors</button>
+      <button type="button" id="timerCancel" class="link-btn">Annuler</button>
+    </div>
+    <p class="timer-note">Gardez l'écran allumé : iOS suspend le minuteur en arrière-plan.</p>
+  </div>
 </div>
 
 <script src="app.js" type="module"></script>
