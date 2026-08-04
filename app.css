@@ -14,7 +14,11 @@
   --paper: #f2f5f9;
 
   --gutter: 22px;
-  --stroke: 3px;     /* épaisseur du contour de l'adjectif, accordée au 900 */
+  /* Contour de l'adjectif, en unité relative pour rester proportionné à toutes
+     les tailles. Le tracé est centré sur le dessin de la lettre : il mord donc
+     aussi vers l'intérieur, et fermait les contrepoinçons du « a » et du « e »
+     du SF Pro Display Black. D'où cette valeur volontairement fine. */
+  --stroke: .023em;
 }
 
 /* Bandes de température : trois teintes par état, appliquées au dégradé. */
@@ -159,9 +163,12 @@ body {
   text-wrap: balance;
 }
 
-/* L'adjectif en contour : le mot que l'on retient. */
+/* L'adjectif en contour : le mot que l'on retient. Une graisse en retrait du
+   900 des mots pleins, car des contrepoinçons plus ouverts encaissent mieux le
+   tracé — la différence de largeur est imperceptible, l'illisibilité non. */
 .statement em {
   font-style: normal;
+  font-weight: 800;
   -webkit-text-stroke: var(--stroke) var(--ink);
   color: transparent;
 }
