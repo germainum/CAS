@@ -4,6 +4,10 @@ on:
   push:
     branches: [main, master]
   pull_request:
+  # Rafraîchit l'instantané du modèle : Alplakes n'est pas interrogeable depuis
+  # le navigateur (pas d'en-tête CORS), la CI le fait donc à sa place.
+  schedule:
+    - cron: '17 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -39,11 +43,31 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/configure-pages@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - id: pages
+        uses: actions/configure-pages@v5
         with:
           # Provisionne GitHub Pages en mode « GitHub Actions » si ce n'est pas
           # déjà fait, au lieu d'échouer sur un dépôt où Pages n'est pas activé.
           enablement: true
+
+      # Repli : on repart de l'instantané déjà en ligne, afin qu'une panne
+      # momentanée d'Alplakes ne fasse pas disparaître les données publiées.
+      - name: Récupère l'instantané publié
+        continue-on-error: true
+        run: |
+          mkdir -p data
+          curl -fsS -m 30 "${{ steps.pages.outputs.base_url }}/data/model.json" \
+            -o data/model.json && echo "instantané précédent conservé" \
+            || echo "aucun instantané publié à ce jour"
+
+      # Un échec ici ne doit pas bloquer la publication du code : l'app se replie
+      # sur les mesures en station et son cache local, et le signale.
+      - name: Précalcule les séries du modèle
+        continue-on-error: true
+        run: node tools/build-model-data.mjs
       # Le site est statique : la racine du dépôt est publiée telle quelle.
       - uses: actions/upload-pages-artifact@v3
         with:

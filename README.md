@@ -5,7 +5,8 @@ lieu par lieu. Conçue pour l'iPhone : elle s'ajoute à l'écran d'accueil, s'ou
 plein écran comme une app native, et fonctionne hors ligne avec la dernière valeur
 connue.
 
-Aucun compte, aucune clé d'API, aucune étape de compilation : dix fichiers statiques.
+Aucun compte, aucune clé d'API, aucun paquet à installer : des fichiers statiques et
+un instantané de données produit par la CI.
 
 ## Installation sur iPhone
 
@@ -35,28 +36,40 @@ la simulation ne renvoie rien.
 
 ## Sources de données
 
-| Source | Rôle | Nature |
-| --- | --- | --- |
-| [existenz.ch](https://api.existenz.ch/) (données OFEV) | températures mesurées en station | mesure in situ |
-| [Alplakes / Eawag](https://www.alplakes.eawag.ch/) | valeur en tout point + historique + prévision | simulation Delft3D-FLOW |
+| Source | Rôle | Nature | Chemin |
+| --- | --- | --- | --- |
+| [existenz.ch](https://api.existenz.ch/) (données OFEV) | températures mesurées en station | mesure in situ | appelée directement par le navigateur |
+| [Alplakes / Eawag](https://www.alplakes.eawag.ch/) | valeur en tout point + historique + prévision | simulation Delft3D-FLOW | précalculée par la CI (voir ci-dessous) |
 
-Les deux sources sont interrogées en parallèle et indépendamment : si l'une tombe,
-l'app reste utile. Une mesure officielle située à moins de 12 km du lieu choisi et
-datant de moins de six heures est privilégiée ; sinon la simulation prend le relais ;
-sinon le cache local, avec son âge affiché.
+Une mesure officielle située à moins de 12 km du lieu choisi et datant de moins de
+six heures est privilégiée ; sinon la simulation prend le relais ; sinon le cache
+local, avec son âge affiché.
 
-> **À vérifier une fois en ligne.** L'environnement dans lequel ce code a été écrit
-> n'avait pas accès à ces deux API : la forme exacte de leurs réponses n'a donc pas
-> pu être confrontée au réel. Les analyseurs sont volontairement tolérants (noms de
-> champs alternatifs, kelvins, valeurs manquantes) et couverts par des tests, mais
-> lancez `npm run check` depuis une machine connectée pour confirmer — le script
-> imprime le code HTTP, l'en-tête CORS et ce que l'app afficherait. En cas d'écart,
-> tout se corrige dans `sources.js`, sans toucher à l'interface.
+### Pourquoi le modèle passe par la CI
+
+L'API Alplakes ne renvoie pas d'en-tête CORS : le navigateur refuse donc l'appel
+depuis une page web, alors que la même URL fonctionne parfaitement hors navigateur.
+`tools/build-model-data.mjs` l'interroge donc dans GitHub Actions — où CORS n'existe
+pas — pour les dix lieux, et dépose `data/model.json` dans le site publié. L'app lit
+ce fichier depuis sa propre origine, sans requête bloquée.
+
+Le workflow tourne à chaque poussée **et toutes les heures**, ce qui suffit largement :
+la température d'un lac varie de moins d'un demi-degré par heure. Trois garde-fous :
+
+- l'instantané déjà en ligne est récupéré avant régénération, donc une panne
+  d'Alplakes ne fait pas disparaître les données publiées ;
+- un échec de génération ne bloque pas la publication du code ;
+- l'app affiche l'âge de l'instantané dès qu'il dépasse six heures — une CI en panne
+  se voit, au lieu de figer silencieusement la température.
+
+`data/model.json` n'est pas versionné : c'est un produit de compilation. Pour le
+générer en local, `npm run data`.
 
 ## Développement
 
 ```bash
 npm test                      # tests de la couche données, sans réseau
+npm run data                  # génère data/model.json (nécessite le réseau)
 npm run check                 # interroge les API réelles et diagnostique
 npm run check montreux        # idem pour un autre lieu
 npm run serve                 # sert le site sur http://localhost:4173
@@ -76,7 +89,8 @@ utile depuis l'iPhone lui-même, il liste les appels réussis ou échoués.
 | `app.js` | requêtes, cache local, rendu, cycle de vie |
 | `sw.js` | service worker : coque en cache, lancement hors ligne |
 | `manifest.webmanifest` | nom, icônes, mode plein écran |
-| `tools/test-parsers.mjs` | 25 tests sur `sources.js` |
+| `tools/build-model-data.mjs` | précalcul de `data/model.json` dans la CI |
+| `tools/test-parsers.mjs` | 33 tests sur `sources.js` |
 | `tools/check-sources.mjs` | vérification des API en conditions réelles |
 | `tools/make-icons.py` | génération des icônes PNG |
 
@@ -93,14 +107,20 @@ lance les tests puis publie le site ; une pull request se limite aux tests.
 
 **Sans Actions** : dans *Settings → Pages*, choisissez **Deploy from a branch**, la
 branche voulue et le dossier `/ (root)`. Le fichier `.nojekyll` garantit que tous
-les fichiers sont servis tels quels.
+les fichiers sont servis tels quels. Attention : `data/model.json` n'étant pas
+versionné, cette voie prive l'app du modèle — il faut alors lancer `npm run data` et
+committer le fichier, ou renoncer à la courbe.
 
-Tout hébergeur statique en HTTPS convient également.
+Tout hébergeur statique en HTTPS convient également, à condition d'y exécuter
+`npm run data` à intervalle régulier.
 
 ## Limites
 
 - La simulation Alplakes n'est pas une mesure : elle peut s'écarter de la réalité
   locale, en particulier près des rives et lors de remontées d'eau froide (bise).
+- Sa fraîcheur est celle du dernier passage de la CI, une heure au plus.
+  GitHub désactive les workflows planifiés après 60 jours sans activité sur le
+  dépôt : au-delà, l'instantané cesse de se rafraîchir et l'app l'indique.
 - Les stations de l'OFEV mesurent la température près de la surface à un point
   précis ; une plage abritée peut être sensiblement plus chaude.
 - Aucune donnée de qualité de l'eau ni de sécurité de baignade n'est fournie.

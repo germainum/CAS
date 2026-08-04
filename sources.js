@@ -45,10 +45,19 @@ export function asArray(payload) {
   if (Array.isArray(payload)) return payload;
   const inner = pick(payload, 'payload', 'data', 'results', 'stations', 'locations');
   if (Array.isArray(inner)) return inner;
-  if (payload && typeof payload === 'object') {
-    return Object.values(payload).filter((v) => v && typeof v === 'object' && !Array.isArray(v));
-  }
-  return [];
+
+  // Certaines réponses indexent les enregistrements par identifiant au lieu de
+  // les lister. La clé porte alors le numéro de station : on la réinjecte, sans
+  // quoi l'enregistrement devient inexploitable.
+  const map = (inner && typeof inner === 'object') ? inner
+    : (payload && typeof payload === 'object') ? payload : null;
+  if (!map) return [];
+
+  return Object.entries(map)
+    .filter(([, v]) => v && typeof v === 'object' && !Array.isArray(v))
+    .map(([key, v]) => (pick(v, 'loc', 'id', 'station', 'nr', 'code', 'key') == null
+      ? { loc: key, ...v }
+      : v));
 }
 
 export function toDate(ts) {
@@ -92,6 +101,38 @@ export function stampUTC(date) {
 export function urlModelPoint(spot, start, end) {
   return `${CFG.alplakes}/simulations/point/${CFG.model}/${CFG.lake}`
        + `/${stampUTC(start)}/${stampUTC(end)}/${CFG.depth}/${spot.lat}/${spot.lon}`;
+}
+
+// Instantané précalculé par la CI, servi depuis la même origine que la page.
+// Chemin relatif : l'app fonctionne aussi sous un sous-répertoire (GitHub Pages).
+export const urlModelSnapshot = () => 'data/model.json';
+
+/* ------------------------------------------------- analyse de l'instantané */
+
+// Extrait la série d'un lieu de l'instantané : { t: [...ISO], v: [...°C] }.
+export function parseSnapshot(raw, spotKey) {
+  const entry = pick(raw?.spots, spotKey);
+  const times = pick(entry, 't', 'time', 'times') || [];
+  const values = pick(entry, 'v', 'values', 'data') || [];
+
+  const points = [];
+  const n = Math.min(times.length, values.length);
+  for (let i = 0; i < n; i++) {
+    const at = toDate(times[i]);
+    if (values[i] == null || values[i] === '') continue;
+    const v = Number(values[i]);
+    if (!at || !plausible(v)) continue;
+    points.push({ at, value: v });
+  }
+  points.sort((a, b) => a.at - b.at);
+  return points;
+}
+
+// Âge de l'instantané, pour signaler une CI en panne plutôt qu'afficher
+// silencieusement des valeurs figées.
+export function snapshotAge(raw, now = Date.now()) {
+  const at = toDate(raw?.generatedAt);
+  return at ? now - at.getTime() : null;
 }
 
 /* ------------------------------------------------------------- analyse existenz */

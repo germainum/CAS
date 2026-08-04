@@ -9,8 +9,9 @@
 // toujours quelque chose, hors ligne compris, en signalant l'âge de la donnée.
 
 import {
-  CFG, SPOTS, advice, bestReading, isStale, parseMeasuredStations, parseSeries,
-  parseStationMeta, toDate, urlLatestTemperature, urlModelPoint, urlStationMeta,
+  CFG, SPOTS, advice, asArray, bestReading, isStale, parseMeasuredStations, parseSeries,
+  parseSnapshot, parseStationMeta, snapshotAge, toDate, urlLatestTemperature,
+  urlModelPoint, urlModelSnapshot, urlStationMeta,
 } from './sources.js';
 
 const $ = (id) => document.getElementById(id);
@@ -52,6 +53,17 @@ function toast(msg) {
 
 /* -------------------------------------------------------------------- réseau */
 
+// Résumé d'URL pour le diagnostic : hôte et chemin, sans schéma ni clé d'app.
+function shortUrl(url) {
+  try {
+    const u = new URL(url);
+    const tail = `${u.host}${u.pathname}`;
+    return tail.length > 96 ? `${tail.slice(0, 93)}…` : tail;
+  } catch {
+    return url;
+  }
+}
+
 async function getJSON(url) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), CFG.timeoutMs);
@@ -60,7 +72,9 @@ async function getJSON(url) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   } catch (err) {
-    throw new Error(err.name === 'AbortError' ? 'délai dépassé' : err.message);
+    // L'URL fait partie du diagnostic : sans elle, « Load failed » n'apprend rien.
+    const reason = err.name === 'AbortError' ? 'délai dépassé' : err.message;
+    throw new Error(`${reason} — ${shortUrl(url)}`);
   } finally {
     clearTimeout(timer);
   }
@@ -96,13 +110,17 @@ async function fetchStationMeta() {
 
   for (const path of ['/locations', '/stations']) {
     try {
-      const meta = parseStationMeta(await getJSON(urlStationMeta(path)));
+      const raw = await getJSON(urlStationMeta(path));
+      const meta = parseStationMeta(raw);
       if (meta) {
         cacheSet('stationMeta', meta);
-        note('existenz' + path, true, `${Object.keys(meta).length} stations`);
+        const located = Object.values(meta).filter((m) => m.lat != null).length;
+        note('existenz' + path, true, `${Object.keys(meta).length} stations, ${located} géolocalisées`);
         return meta;
       }
-      note('existenz' + path, false, 'aucune station exploitable');
+      // Réponse reçue mais illisible : le nombre d'entrées lues situe le problème.
+      note('existenz' + path, false,
+        `aucune station exploitable sur ${asArray(raw).length} entrée(s) — clés : ${Object.keys(raw || {}).slice(0, 6).join(', ') || '∅'}`);
     } catch (err) {
       note('existenz' + path, false, err.message);
     }
@@ -112,13 +130,29 @@ async function fetchStationMeta() {
 
 async function fetchMeasuredStations() {
   const raw = await getJSON(urlLatestTemperature());
+  const received = asArray(raw).length;
   const meta = await fetchStationMeta();
   const list = parseMeasuredStations(raw, meta);
-  note('existenz/latest', true, `${list.length} station(s) sur le Léman`);
+  note('existenz/latest', list.length > 0,
+    `${list.length} station(s) sur le Léman, ${received} enregistrement(s) reçu(s)`);
   return list;
 }
 
+// Le modèle passe d'abord par l'instantané précalculé : Alplakes ne renvoie pas
+// d'en-tête CORS, donc l'appel direct n'aboutit que hors navigateur. Il reste
+// tenté en second, au cas où (usage local, ou CORS ouvert un jour).
 async function fetchModelSeries(spot) {
+  try {
+    const raw = await getJSON(urlModelSnapshot());
+    const points = parseSnapshot(raw, spot.key);
+    if (!points.length) throw new Error(`aucun point pour ${spot.key}`);
+    const ageH = Math.round((snapshotAge(raw) ?? 0) / 3600000);
+    note('instantané', true, `${spot.name} : ${points.length} points, calculé il y a ${ageH} h`);
+    return { points, origin: 'snapshot', age: snapshotAge(raw) };
+  } catch (err) {
+    note('instantané', false, err.message);
+  }
+
   const now = Date.now();
   const url = urlModelPoint(
     spot,
@@ -127,8 +161,8 @@ async function fetchModelSeries(spot) {
   );
   const points = parseSeries(await getJSON(url));
   if (!points.length) throw new Error('série vide');
-  note('alplakes', true, `${spot.name} : ${points.length} points`);
-  return points;
+  note('alplakes direct', true, `${spot.name} : ${points.length} points`);
+  return { points, origin: 'live', age: 0 };
 }
 
 /* ----------------------------------------------------------------- rendu UI */
@@ -254,11 +288,11 @@ const reviveSeries = (raw) => (raw || [])
   .map((p) => ({ at: new Date(p.at), value: p.value }))
   .filter((p) => !isNaN(p.at.getTime()) && isFinite(p.value));
 
-function paint(stations, series, { fromCache = false } = {}) {
+function paint(stations, series, hint = 'modèle Eawag') {
   renderStations(stations);
   renderChart(series);
   renderHero(bestReading(currentSpot, stations, series));
-  $('chartHint').textContent = fromCache ? 'depuis le cache' : 'modèle Eawag';
+  $('chartHint').textContent = hint;
 }
 
 async function refresh({ silent = false } = {}) {
@@ -281,16 +315,24 @@ async function refresh({ silent = false } = {}) {
   }
 
   let series;
+  let hint = 'modèle Eawag';
   if (seriesRes.status === 'fulfilled') {
-    series = seriesRes.value;
+    const { points, origin, age } = seriesRes.value;
+    series = points;
+    // Un instantané qui ne se rafraîchit plus doit se voir : la CI est en panne.
+    const ageH = Math.round((age || 0) / 3600000);
+    hint = origin === 'live' ? 'modèle Eawag, direct'
+      : ageH >= 6 ? `modèle Eawag, il y a ${ageH} h`
+      : 'modèle Eawag';
     cacheSet(`series.${currentSpot.key}`,
       series.map((p) => ({ at: p.at.toISOString(), value: p.value })));
   } else {
-    note('alplakes', false, seriesRes.reason?.message || 'échec');
+    note('modèle', false, seriesRes.reason?.message || 'échec');
     series = reviveSeries(cacheGet(`series.${currentSpot.key}`));
+    hint = series.length ? 'dernière valeur en cache' : 'indisponible';
   }
 
-  paint(stations, series, { fromCache: seriesRes.status === 'rejected' && series.length > 0 });
+  paint(stations, series, hint);
 
   if (!silent && stationsRes.status === 'rejected' && seriesRes.status === 'rejected') {
     toast(navigator.onLine ? 'Sources injoignables' : 'Hors ligne — données en cache');
@@ -305,7 +347,7 @@ function paintFromCache() {
   const stations = cacheGet('stations');
   const series = reviveSeries(cacheGet(`series.${currentSpot.key}`));
   if (!stations && !series.length) return false;
-  paint(stations, series, { fromCache: true });
+  paint(stations, series, 'dernière valeur en cache');
   return true;
 }
 
