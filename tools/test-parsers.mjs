@@ -184,6 +184,70 @@ test('forme réelle : la station de Genève alimente le grand affichage', () => 
   assert.match(r.label, /Genève/);
 });
 
+// ---------------------------------------------------------------------------
+// Situation réelle observée en production : les trois stations du Léman ne
+// publient PAS de température (elles mesurent le niveau). Les seules valeurs
+// disponibles dans l'emprise du lac viennent de deux stations du Rhône — l'une
+// à la sortie du lac, l'autre en amont, alimentée par les glaciers à 10,9 °C.
+// C'est cette seconde qui affichait 10,8 °C à Vevey.
+// ---------------------------------------------------------------------------
+
+const RHONE_META = {
+  ...parseStationMeta(REAL_LOCATIONS),
+  2009: { name: 'Porte du Scex', water: 'Rhône', kind: 'river', lat: 46.3496, lon: 6.8886 },
+  2606: { name: "Genève, Halle de l'Île", water: 'Rhône', kind: 'river', lat: 46.2058, lon: 6.1435 },
+};
+
+const RHONE_LATEST = {
+  payload: [
+    { timestamp: 1785873600, loc: '2009', par: 'temperature', val: 10.9 },
+    { timestamp: 1785873600, loc: '2606', par: 'temperature', val: 25.71 },
+  ],
+};
+
+test('le Rhône glaciaire en amont est écarté, malgré sa position dans l’emprise', () => {
+  const list = parseMeasuredStations(RHONE_LATEST, RHONE_META);
+  assert.ok(!list.some((s) => s.id === '2009'),
+    'Porte du Scex mesure de l’eau de glacier, pas le lac');
+});
+
+test('la sortie du lac est retenue, et nommée comme telle', () => {
+  const list = parseMeasuredStations(RHONE_LATEST, RHONE_META);
+  const out = list.find((s) => s.id === '2606');
+  assert.ok(out, 'l’eau qui sort du lac est de l’eau du lac');
+  assert.equal(out.name, 'Genève, sortie du lac');
+  // Le cours d'eau reste nommé pour ce qu'il est ; c'est le nom de la station
+  // qui porte la nuance, sans la répéter.
+  assert.equal(out.water, 'Rhône');
+  assert.equal(out.value, 25.71);
+});
+
+test('Vevey ne se rattache plus à une rivière : le modèle reprend la main', () => {
+  const stations = parseMeasuredStations(RHONE_LATEST, RHONE_META)
+    .map((s) => ({ ...s, at: new Date(NOW - 10 * 60 * 1000) }));
+  const series = [{ at: new Date(NOW), value: 22.8 }];
+  const r = bestReading(SPOTS.find((s) => s.key === 'vevey'), stations, series, NOW);
+  assert.equal(r.kind, 'model', 'aucune station lacustre proche de Vevey');
+  assert.equal(r.value, 22.8);
+});
+
+test('Le Bouveret non plus, alors qu’il est à 4 km de Porte du Scex', () => {
+  const stations = parseMeasuredStations(RHONE_LATEST, RHONE_META)
+    .map((s) => ({ ...s, at: new Date(NOW - 10 * 60 * 1000) }));
+  const r = bestReading(SPOTS.find((s) => s.key === 'bouveret'), stations, [{ at: new Date(NOW), value: 23.1 }], NOW);
+  assert.equal(r.kind, 'model');
+  assert.equal(r.value, 23.1);
+});
+
+test('Genève garde sa mesure, celle de la sortie du lac', () => {
+  const stations = parseMeasuredStations(RHONE_LATEST, RHONE_META)
+    .map((s) => ({ ...s, at: new Date(NOW - 10 * 60 * 1000) }));
+  const r = bestReading(SPOTS.find((s) => s.key === 'geneve'), stations, [{ at: new Date(NOW), value: 24 }], NOW);
+  assert.equal(r.kind, 'measured');
+  assert.equal(r.value, 25.71);
+  assert.match(r.label, /sortie du lac/);
+});
+
 console.log('\nmesures in situ (existenz.ch)');
 
 const META = {

@@ -44,9 +44,15 @@ function formatAge(value) {
 function shortSource(label, at) {
   const age = formatAge(at).replace(/^il y a /, '');
   const station = /^mesure/.test(label) ? label.replace(/^mesure\s*·\s*/, '') : null;
-  const head = station
-    ? (station.toLowerCase() === currentSpot.name.toLowerCase() ? 'mesure' : station)
-    : label;
+  let head = label;
+  if (station) {
+    const spot = currentSpot.name.toLowerCase();
+    const low = station.toLowerCase();
+    // « Genève » → « mesure » ; « Genève, sortie du lac » → « sortie du lac ».
+    head = low === spot ? 'mesure'
+      : low.startsWith(`${spot},`) ? station.slice(spot.length + 1).trim()
+      : station;
+  }
   return [head, age].filter(Boolean).join(' · ');
 }
 

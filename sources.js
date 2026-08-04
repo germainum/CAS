@@ -167,10 +167,25 @@ export function parseStationMeta(raw) {
   return Object.keys(meta).length ? meta : null;
 }
 
-const LEMAN_NAME = /l[ée]man|genfersee|lake\s*geneva|gen[eè]ve|geneva|rh[oô]ne/i;
+const LEMAN_NAME = /l[ée]man|genfersee|lake\s*geneva/i;
 
-// Retient les mesures de température d'eau situées sur le Léman (ou, à défaut de
-// coordonnées, celles dont le nom désigne clairement le lac ou son émissaire).
+// Une station de rivière dans l'emprise du lac ne mesure pas le lac : à Porte du
+// Scex, le Rhône amont est à 10 °C en plein été — de l'eau de glacier. Seule
+// exception, l'exutoire : l'eau qui sort du lac EST de l'eau du lac. Les stations
+// concernées sont donc nommées une à une, plutôt que déduites d'une géographie
+// que les données ne portent pas.
+const LAKE_OUTFLOWS = {
+  2606: 'Genève, sortie du lac',   // Rhône, Halle de l'Île
+};
+
+// Vrai si la station mesure de l'eau du lac : pleine eau, ou exutoire nommé.
+function measuresLakeWater(id, meta) {
+  if (LAKE_OUTFLOWS[id]) return true;
+  if (/river|fluss|rivi[eè]re/i.test(meta?.kind ?? '')) return false;
+  return LEMAN_NAME.test(`${meta?.name ?? ''} ${meta?.water ?? ''}`);
+}
+
+// Retient les seules mesures de température représentatives du Léman.
 export function parseMeasuredStations(raw, meta, bbox = CFG.bbox) {
   const out = [];
   for (const row of asArray(raw)) {
@@ -183,8 +198,13 @@ export function parseMeasuredStations(raw, meta, bbox = CFG.bbox) {
 
     const id = String(pick(row, 'loc', 'location', 'station', 'id') ?? '');
     const m = (meta && meta[id]) || {};
-    const name = String(pick(row, 'name', 'loc_name') ?? m.name ?? id ?? '');
     const water = m.water || String(pick(row, 'water', 'waterbody') ?? '');
+    const name = LAKE_OUTFLOWS[id]
+      ?? String(pick(row, 'name', 'loc_name') ?? m.name ?? id ?? '');
+
+    // La nature de l'eau primait sur la géographie : une rivière glaciaire
+    // traversant l'emprise du lac était retenue comme s'il s'agissait du lac.
+    if (!measuresLakeWater(id, { ...m, name: m.name ?? name })) continue;
 
     let coords = null;
     if (m.lat != null && m.lon != null) {
@@ -192,8 +212,6 @@ export function parseMeasuredStations(raw, meta, bbox = CFG.bbox) {
                  && m.lon >= bbox.minLon && m.lon <= bbox.maxLon;
       if (!inBox) continue;
       coords = { lat: m.lat, lon: m.lon };
-    } else if (!LEMAN_NAME.test(`${name} ${water}`)) {
-      continue;
     }
 
     out.push({
