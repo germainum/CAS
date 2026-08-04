@@ -23,15 +23,15 @@ export const CFG = {
 
 // Points pris au large des localités : le modèle n'a de valeur que sur l'eau.
 export const SPOTS = [
-  { key: 'geneve',    name: 'Genève',      sub: 'Rade / Pâquis', lat: 46.2210, lon: 6.1610 },
+  { key: 'geneve',    name: 'Genève',      sub: 'Rade / Pâquis', lat: 46.2225, lon: 6.1589 },
   { key: 'nyon',      name: 'Nyon',        sub: '',              lat: 46.3780, lon: 6.2650 },
   { key: 'morges',    name: 'Morges',      sub: '',              lat: 46.4980, lon: 6.4980 },
   { key: 'lausanne',  name: 'Lausanne',    sub: 'Ouchy',         lat: 46.4950, lon: 6.6300 },
   { key: 'vevey',     name: 'Vevey',       sub: '',              lat: 46.4520, lon: 6.8420 },
   { key: 'montreux',  name: 'Montreux',    sub: '',              lat: 46.4250, lon: 6.9050 },
-  { key: 'bouveret',  name: 'Le Bouveret', sub: 'Haut-Lac',      lat: 46.3900, lon: 6.8900 },
-  { key: 'evian',     name: 'Évian',       sub: '',              lat: 46.4050, lon: 6.5850 },
-  { key: 'thonon',    name: 'Thonon',      sub: '',              lat: 46.3850, lon: 6.4750 },
+  { key: 'bouveret',  name: 'Le Bouveret', sub: 'Haut-Lac',      lat: 46.4035, lon: 6.8900 },
+  { key: 'evian',     name: 'Évian',       sub: '',              lat: 46.4155, lon: 6.5850 },
+  { key: 'thonon',    name: 'Thonon',      sub: '',              lat: 46.3925, lon: 6.4687 },
   { key: 'yvoire',    name: 'Yvoire',      sub: '',              lat: 46.3800, lon: 6.3300 },
 ];
 
@@ -312,29 +312,21 @@ const UNKNOWN = {
 
 /* ------------------------------------------------------------ carte du lac */
 
-// Contour schématique du Léman, en [lat, lon], parcouru dans le sens horaire :
-// rive suisse de Genève à Villeneuve, puis rive française jusqu'à Genève.
-// Tracé à la main d'après des points de rive connus — l'environnement de
-// développement n'a pas d'accès réseau pour récupérer un contour officiel. Il
-// vise la silhouette reconnaissable du lac, pas la précision cartographique.
+// Contour du Léman, en [lat, lon]. Extrait de Natural Earth 10m (domaine
+// public), converti depuis le GeoJSON d'origine en [lon, lat]. Trente-huit
+// points : la silhouette est juste, mais volontairement lissée près des rives —
+// ce n'est pas une carte de navigation.
 export const LAKE_OUTLINE = [
-  // rive suisse, du Rhône à Genève jusqu'à Villeneuve
-  [46.2075, 6.1490], [46.2135, 6.1510], [46.2205, 6.1478], [46.2380, 6.1500],
-  [46.2560, 6.1530], [46.2830, 6.1650], [46.3170, 6.1930], [46.3520, 6.2100],
-  [46.3830, 6.2380], [46.3960, 6.2560], [46.4260, 6.2960], [46.4580, 6.3400],
-  [46.4700, 6.4000], [46.4830, 6.4560], [46.5100, 6.4990], [46.5120, 6.5670],
-  [46.5140, 6.6000], [46.5070, 6.6280], [46.5060, 6.6600], [46.5030, 6.6870],
-  [46.4900, 6.7300], [46.4780, 6.7770], [46.4680, 6.8100], [46.4590, 6.8430],
-  [46.4530, 6.8600], [46.4400, 6.8880], [46.4340, 6.9110], [46.4280, 6.9250],
-  [46.4140, 6.9280], [46.4000, 6.9300],
-  // rive française, de Villeneuve à Genève ; le promontoire d'Yvoire marque
-  // le resserrement entre Grand-Lac et Petit-Lac
-  [46.3900, 6.8900], [46.3900, 6.8600], [46.3920, 6.8060], [46.3990, 6.7600],
-  [46.4060, 6.7200], [46.4030, 6.6500], [46.4010, 6.5880], [46.3900, 6.5350],
-  [46.3760, 6.4780], [46.3660, 6.4300], [46.3530, 6.3700], [46.3620, 6.3400],
-  [46.3700, 6.3250], [46.3680, 6.3030], [46.3530, 6.2830], [46.3250, 6.2480],
-  [46.3030, 6.2450], [46.2870, 6.2200], [46.2700, 6.2000], [46.2450, 6.1830],
-  [46.2200, 6.1680], [46.2075, 6.1560],
+  [46.4587, 6.8712], [46.4419, 6.9165], [46.4231, 6.9354], [46.4043, 6.9139],
+  [46.4025, 6.8677], [46.4231, 6.6972], [46.4093, 6.4994], [46.4063, 6.4947],
+  [46.3922, 6.4841], [46.3890, 6.4791], [46.3857, 6.4647], [46.3716, 6.4329],
+  [46.3684, 6.4176], [46.3654, 6.4082], [46.3513, 6.3937], [46.3480, 6.3837],
+  [46.3507, 6.3761], [46.3716, 6.3555], [46.3739, 6.2948], [46.3124, 6.2371],
+  [46.2388, 6.1830], [46.2047, 6.1332], [46.2132, 6.1362], [46.2203, 6.1403],
+  [46.2265, 6.1459], [46.2312, 6.1532], [46.2689, 6.1600], [46.3001, 6.1765],
+  [46.4511, 6.3184], [46.4614, 6.3346], [46.4673, 6.3528], [46.4731, 6.4191],
+  [46.4796, 6.4358], [46.5132, 6.4950], [46.5176, 6.5109], [46.5223, 6.5977],
+  [46.5194, 6.6201], [46.4784, 6.7844]
 ];
 
 // Projette des points [lat, lon] dans une boîte SVG. Équirectangulaire corrigée

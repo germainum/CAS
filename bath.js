@@ -85,11 +85,9 @@ function renderPlan() {
     $('bathNote').textContent = 'Température inconnue : durée à régler à la main.';
     return;
   }
-  const parts = ['une minute par degré'];
+  const parts = ['Une minute par degré'];
   if (plan.capped) parts.push(`plafonné à ${BATH_MAX_MINUTES} min`);
-  if (!plan.cold) parts.push('au-delà de 18 °C, ce n’est plus un bain froid');
-  // Le plafond doit se lire comme une limite, jamais comme un objectif.
-  $('bathNote').textContent = `Maximum conseillé : ${plan.minutes} min · ${parts.join(' · ')}.`;
+  $('bathNote').textContent = parts.join(' · ');
 }
 
 function renderTimer() {
