@@ -6,7 +6,7 @@
 // en arrière-plan ou que l'écran s'éteint, et un compteur incrémental dériverait.
 // Une session en cours est conservée, de sorte qu'un rechargement ne la perde pas.
 
-import { BATH_MAX_MINUTES, bathPhase, bathPlan, formatClock } from './sources.js';
+import { BATH_MAX_MINUTES, bathPhase, bathPlan, breathCue, formatClock } from './sources.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -80,16 +80,16 @@ function renderPlan() {
 
   $('bathMinutes').textContent = minutes;
   $('briefMinutes').textContent = minutes;
-  $('bathStart').disabled = false;
 
   if (!plan) {
     $('bathNote').textContent = 'Température inconnue : durée à régler à la main.';
     return;
   }
-  const parts = [`une minute par degré, soit ${plan.minutes} min à ${plan.temp.toFixed(1).replace('.', ',')} °C`];
+  const parts = ['une minute par degré'];
   if (plan.capped) parts.push(`plafonné à ${BATH_MAX_MINUTES} min`);
   if (!plan.cold) parts.push('au-delà de 18 °C, ce n’est plus un bain froid');
-  $('bathNote').textContent = `Maximum conseillé — ${parts.join(' · ')}.`;
+  // Le plafond doit se lire comme une limite, jamais comme un objectif.
+  $('bathNote').textContent = `Maximum conseillé : ${plan.minutes} min · ${parts.join(' · ')}.`;
 }
 
 function renderTimer() {
@@ -109,6 +109,22 @@ function renderTimer() {
   $('timerMeta').textContent = left >= 0
     ? `${formatClock(el)} écoulées sur ${formatClock(session.totalSec)}`
     : `dépassement de ${formatClock(-left)} — sors maintenant`;
+
+  // La respiration guidée n'a de sens qu'à l'entrée dans l'eau, quand il s'agit
+  // de reprendre le contrôle du souffle.
+  const breath = $('breath');
+  if (phase.key === 'shock') {
+    const cue = breathCue(el);
+    breath.hidden = false;
+    $('breathWord').textContent = `${cue.word} ${cue.seconds}`;
+    // Le cercle s'ouvre puis se referme, en suivant la consigne.
+    const scale = cue.phase === 'in' ? 0.62 + cue.progress * 0.38 : 1 - cue.progress * 0.38;
+    const ring = $('breathRing');
+    ring.style.transform = `scale(${scale.toFixed(3)})`;
+    ring.style.opacity = String(0.3 + (cue.phase === 'in' ? cue.progress : 1 - cue.progress) * 0.4);
+  } else if (!breath.hidden) {
+    breath.hidden = true;
+  }
 
   // Un son à l'approche de la sortie, trois à l'échéance. Sans effet si l'app
   // est en arrière-plan : iOS y suspend l'audio comme le reste.
@@ -226,8 +242,16 @@ export function setWaterTemperature(value) {
   renderPlan();
 }
 
+// Le bouton ne s'active qu'une fois l'engagement coché — et se désactive de
+// nouveau si l'on décoche.
+function syncStart() {
+  $('bathStart').disabled = !$('alone').checked;
+}
+
 export function initBath() {
   renderPlan();
+  syncStart();
+  $('alone').addEventListener('change', syncStart);
 
   $('bathStart').addEventListener('click', openBriefing);
   $('briefCancel').addEventListener('click', close);

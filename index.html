@@ -34,65 +34,56 @@
         <path d="M2 9c5-5 9-5 14 0s9 5 14 0 9-5 12-2"/>
         <path d="M2 19c5-5 9-5 14 0s9 5 14 0 9-5 12-2"/>
       </svg>
-      <button id="refresh" class="ghost" type="button" aria-label="Actualiser">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v4h-4"/></svg>
-      </button>
+      <div class="tools">
+        <button id="locate" class="ghost" type="button" aria-label="Le lieu le plus proche de moi">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3 3 10.5l7.5 3 3 7.5L21 3Z"/></svg>
+        </button>
+        <button id="refresh" class="ghost" type="button" aria-label="Actualiser">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v4h-4"/></svg>
+        </button>
+      </div>
     </header>
+
+    <p class="eyebrow">Bain froid · <span id="readoutPlace">—</span></p>
 
     <div class="readout" aria-live="polite">
       <p class="readout-value"><span id="value">--</span><span class="degree">°</span></p>
-      <p class="readout-label">
-        <span id="readoutPlace">—</span>
-        <span id="readoutSource" class="readout-source"></span>
-      </p>
+      <p class="readout-source" id="readoutSource"></p>
     </div>
 
-    <div class="statement">
-      <h1 id="statement">L'eau est <em id="adjective">inconnue</em>.</h1>
-      <p class="aside" id="aside">Récupération des données…</p>
-    </div>
-
-    <!-- La carte comble l'écran plutôt qu'un vide, et compare les lieux. -->
-    <div class="map" id="map"></div>
-    <p class="micro-note map-note">
-      Modèle Eawag, valeurs comparables · touchez un point pour changer de lieu
-    </p>
-
-    <nav class="places" id="places" aria-label="Choisir un lieu"></nav>
-  </section>
-
-  <!-- Préparer le bain : durée conseillée, minuteur, règles. -->
-  <section class="block bath">
-    <h2 class="micro">Bain froid <span class="micro-note">une minute par degré</span></h2>
-
-    <div class="bath-plan">
+    <div class="card">
+      <p class="card-title">Durée</p>
       <div class="bath-stepper">
         <button type="button" id="bathMinus" class="round" aria-label="Une minute de moins">−</button>
         <p class="bath-duration"><span id="bathMinutes">--</span><span class="bath-unit">min</span></p>
         <button type="button" id="bathPlus" class="round" aria-label="Une minute de plus">+</button>
       </div>
-      <p class="bath-note" id="bathNote">Durée conseillée d'après la température.</p>
-      <button type="button" id="bathStart" class="solid">Démarrer le minuteur</button>
+      <p class="card-note" id="bathNote">Durée conseillée d'après la température.</p>
     </div>
 
-    <ul class="rules">
-      <li><b>Jamais seul.</b> Un accompagnement est indispensable : crampe ou malaise arrivent sans prévenir.</li>
-      <li><b>Une minute par degré, au maximum.</b> Dix minutes à 10 °C. C'est un plafond, pas un objectif.</li>
-      <li><b>Respire lentement.</b> De grandes inspirations lentes contrent le choc thermique et calment le cœur.</li>
-      <li><b>Pas la tête la première.</b> Entrez progressivement ; un bonnet limite la perte de chaleur.</li>
-      <li><b>Restez près du bord.</b> La fatigue peut tomber d'un coup : il faut pouvoir sortir vite.</li>
-      <li><b>Sortez immédiatement</b> en cas d'euphorie inhabituelle ou de tremblements violents — ce sont les signes précurseurs d'hypothermie.</li>
-      <li><b>En cas de problème cardiaque ou de tension</b>, abstenez-vous et demandez un avis médical.</li>
-    </ul>
+    <!-- Engagement explicite : la règle la plus importante ne se lit pas en
+         passant, elle se coche. Le bouton reste inerte sans elle. -->
+    <label class="card check" for="alone">
+      <input type="checkbox" id="alone">
+      <span class="box" aria-hidden="true">
+        <svg viewBox="0 0 16 16"><path d="M3 8.5 6.2 12 13 4.5"/></svg>
+      </span>
+      <span class="check-text">
+        Je ne suis pas seul. Crampe ou malaise arrivent sans prévenir.
+      </span>
+    </label>
 
-    <p class="micro-note">
-      D'après
-      <a href="https://www.slrg.ch/fr/conseils-pour-la-nage-en-eau-froide" target="_blank" rel="noopener">la SSS</a>,
-      <a href="https://www.24heures.ch/bain-en-eau-froide-conseils-et-lieux-pour-se-lancer-358447963782" target="_blank" rel="noopener">24 heures</a>,
-      <a href="https://www.20min.ch/fr/story/bain-en-eau-froide-les-conseils-dun-expert-romand-294476565256" target="_blank" rel="noopener">20 minutes</a>
-      et <a href="https://www.wta.org/go-outside/trail-smarts/how-to-swim-safely-in-cold-water-lakes" target="_blank" rel="noopener">la WTA</a>.
-      Ces repères ne remplacent pas un avis médical.
-    </p>
+    <button type="button" id="bathStart" class="cta" disabled>
+      <svg class="cta-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5-9-5.5Z"/></svg>
+      Démarrer le bain
+    </button>
+    <p class="cta-under">La respiration guidée démarre dès l'entrée dans l'eau</p>
+  </section>
+
+  <!-- La carte, en dessous : comparer les lieux vient après le geste. -->
+  <section class="block">
+    <nav class="places" id="places" aria-label="Choisir un lieu"></nav>
+    <div class="map" id="map"></div>
   </section>
 
   <!-- Détails, sous la ligne de flottaison. -->
@@ -102,11 +93,6 @@
     <p class="micro-note legend">
       <span class="key"></span>simulé<span class="key key-future"></span>prévision
     </p>
-  </section>
-
-  <section class="block">
-    <h2 class="micro">Stations de mesure <span class="micro-note">OFEV</span></h2>
-    <ul class="stations" id="stations"></ul>
   </section>
 
   <footer class="block foot">
@@ -136,13 +122,16 @@
   <!-- Deuxième confirmation : les consignes se lisent avant d'entrer dans l'eau. -->
   <div class="brief" id="brief">
     <p class="timer-phase">Avant d'entrer</p>
-    <p class="brief-duration"><span id="briefMinutes">--</span> min maximum</p>
+
+    <p class="brief-duration"><span id="briefMinutes">--</span><span class="bath-unit">min max</span></p>
+
     <ul class="brief-list">
       <li>Quelqu'un vous accompagne et vous voit.</li>
-      <li>Entrez progressivement, jamais la tête la première.</li>
-      <li>Respirez lentement, longues expirations.</li>
-      <li>Restez à portée du bord.</li>
-      <li>Sortez à la moindre euphorie ou tremblement violent.</li>
+      <li>Entrez progressivement, jamais la tête la première ; un bonnet limite la perte de chaleur.</li>
+      <li>Respirez lentement, longues expirations, pour contrer le choc thermique.</li>
+      <li>Restez à portée du bord : la fatigue peut tomber d'un coup.</li>
+      <li>Sortez à la moindre euphorie inhabituelle ou tremblement violent.</li>
+      <li>Problème cardiaque ou de tension : abstenez-vous, demandez un avis médical.</li>
     </ul>
 
     <div class="hold">
@@ -158,12 +147,25 @@
     </div>
 
     <button type="button" id="briefCancel" class="link-btn">Annuler</button>
+
+    <p class="brief-sources">
+      D'après <a href="https://www.slrg.ch/fr/conseils-pour-la-nage-en-eau-froide" target="_blank" rel="noopener">la SSS</a>,
+      <a href="https://www.24heures.ch/bain-en-eau-froide-conseils-et-lieux-pour-se-lancer-358447963782" target="_blank" rel="noopener">24 heures</a>,
+      <a href="https://www.20min.ch/fr/story/bain-en-eau-froide-les-conseils-dun-expert-romand-294476565256" target="_blank" rel="noopener">20 minutes</a>
+      et <a href="https://www.wta.org/go-outside/trail-smarts/how-to-swim-safely-in-cold-water-lakes" target="_blank" rel="noopener">la WTA</a>.
+      Ne remplace pas un avis médical.
+    </p>
   </div>
 
   <div class="timer-inner" aria-live="polite">
     <p class="timer-phase" id="timerPhase">—</p>
     <p class="timer-clock" id="timerClock">00:00</p>
     <p class="timer-hint" id="timerHint"></p>
+
+    <div class="breath" id="breath" hidden>
+      <span class="breath-ring" id="breathRing"></span>
+      <span class="breath-word" id="breathWord">Inspirez</span>
+    </div>
     <div class="timer-bar"><span id="timerFill"></span></div>
     <p class="timer-meta" id="timerMeta"></p>
     <p class="timer-warn">

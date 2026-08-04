@@ -1,9 +1,10 @@
 # Température du Léman
 
-Application web installable (PWA) qui affiche la température de l'eau du lac Léman,
-lieu par lieu. Conçue pour l'iPhone : elle s'ajoute à l'écran d'accueil, s'ouvre en
-plein écran comme une app native, et fonctionne hors ligne avec la dernière valeur
-connue.
+Application web installable (PWA) pour préparer un bain froid dans le Léman : la
+température de l'eau à l'endroit où vous êtes, la durée conseillée qui en découle,
+et un minuteur qui guide l'immersion. Conçue pour l'iPhone — elle s'ajoute à
+l'écran d'accueil, s'ouvre en plein écran comme une app native, et fonctionne hors
+ligne avec la dernière valeur connue.
 
 Aucun compte, aucune clé d'API, aucun paquet à installer : des fichiers statiques et
 un instantané de données produit par la CI.
@@ -21,18 +22,20 @@ rafraîchir.
 
 ## Ce qu'affiche l'app
 
-- La **température actuelle** au lieu choisi, en très gros caractères en haut
-  d'écran, avec l'âge de la donnée.
-- Une **carte du lac** portant la température des dix lieux, comparables entre
-  elles car toutes issues du modèle. Un point se touche pour changer de lieu.
-- La nature de la valeur sous le chiffre : `mesure` (station officielle proche)
-  ou `modèle Eawag` (simulation du lac). Une valeur de plus de six heures est
-  estompée.
-- Une **courbe sur sept jours** : cinq jours écoulés en trait plein, deux jours de
-  prévision en pointillé.
-- La liste des **stations de mesure** du bassin lémanique avec leur relevé.
-- Une indication de baignade, sans valeur officielle.
-- Un **minuteur de bain froid** et les règles de sécurité qui vont avec.
+L'écran d'accueil est un écran de préparation :
+
+- la **température de l'eau** au lieu courant, avec l'origine de la valeur —
+  `mesure` (station officielle proche) ou `modèle Eawag` — et son âge ; une valeur
+  de plus de six heures est estompée ;
+- la **durée conseillée**, réglable, qui découle de la température ;
+- un **engagement à cocher** : « je ne suis pas seul ». Le bouton de lancement
+  reste inerte tant qu'il ne l'est pas ;
+- le **lieu le plus proche de vous** est sélectionné d'emblée si la localisation
+  est autorisée, avec la distance affichée.
+
+En dessous : une **carte du lac** portant la température des dix lieux,
+comparables entre elles car toutes issues du modèle, et une **courbe sur sept
+jours** — cinq écoulés en trait plein, deux de prévision en pointillé.
 
 Dix lieux sont proposés, des Pâquis au Bouveret. On passe de l'un à l'autre par
 le ruban en bas d'écran, par **balayage horizontal** sur le premier écran, ou par
@@ -49,6 +52,11 @@ La durée conseillée découle de la température de l'eau : **une minute par de
 et c'est un plafond, jamais un objectif. Dix minutes à 10 °C. La valeur est
 plafonnée à 20 minutes, car au-delà de 18 °C la règle perd son sens — ce n'est
 plus un bain froid. Elle reste réglable à la main.
+
+Pendant l'immersion, une **respiration guidée** accompagne l'entrée dans l'eau :
+quatre secondes d'inspiration, six d'expiration, l'expiration allongée étant ce
+qui calme la réponse au choc thermique. Un cercle s'ouvre et se referme au rythme
+de la consigne, pour ne pas avoir à lire.
 
 Le lancement demande **deux gestes** : « Démarrer », qui affiche les consignes
 essentielles, puis un **maintien d'une seconde** sur un bouton circulaire dont

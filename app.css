@@ -15,6 +15,7 @@
   --paper: #f2f5f9;
 
   --gutter: 22px;
+  --radius: 20px;
 }
 
 /* Bandes de température : trois teintes par état, appliquées au dégradé. */
@@ -88,13 +89,11 @@ body {
 
 /* ------------------------------------------------------- premier écran */
 
+/* L'écran de préparation prend sa hauteur naturelle : la carte qui suit dépasse
+   alors juste assez du pli pour inviter à défiler, sans vide artificiel. */
 .screen {
-  min-height: 100vh;
-  min-height: 100dvh;
   padding-top: calc(env(safe-area-inset-top) + 18px);
   padding-bottom: 8px;
-  display: flex;
-  flex-direction: column;
 }
 
 .top {
@@ -139,67 +138,25 @@ body {
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .ghost.busy svg { animation: none; } }
 
-/* L'affirmation occupe l'espace disponible, mais se pose bas : le vide se
-   creuse au-dessus, comme dans la référence, plutôt que de part et d'autre. */
-.statement {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  padding: 26px 0 0;
-}
-
-.statement h1 {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
-  font-size: clamp(2.1rem, 11.5vw, 3.4rem);
-  font-weight: 900;
-  line-height: .96;
-  letter-spacing: -.04em;
-  text-wrap: balance;
-}
-
-/* L'adjectif, le mot qui change, se distingue par un filet face au 900 des mots
-   pleins. Ce n'est pas le contour de la maquette d'origine : -webkit-text-stroke
-   trace aussi les arêtes des contours superposés du glyphe, ce qui barrait le
-   « a » et transformait le « e » en « € » sur SF Pro Display. Le défaut ne dépend
-   pas de l'épaisseur — d'où le changement de procédé, sans mode de défaillance. */
-.statement em {
-  font-style: normal;
-  font-weight: 300;
-  letter-spacing: -.03em;
-}
-
-.aside {
-  margin: 16px 0 0;
-  max-width: 32ch;
-  font-size: 14px;
-  line-height: 1.45;
-  color: var(--ink-soft);
-}
-
 /* ------------------------------------------------------ lecture chiffrée */
 
-/* En tête d'écran : le chiffre d'abord, le lieu dessous. C'est la première
-   chose que l'on vient chercher. */
-.readout { margin-top: 26px; }
-
-.readout-label {
-  margin: 10px 0 0;
-  font-size: 11px;
-  line-height: 1.5;
-  letter-spacing: .09em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
+/* Chiffre et origine sur une même ligne de base, comme dans la maquette. */
+.readout {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 2px 0 22px;
 }
 
-.readout-source { display: block; }
+
 
 .readout-value {
   margin: 0;
   display: flex;
   align-items: flex-start;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
-  font-size: clamp(4.4rem, 23vw, 7rem);
+  font-size: clamp(3.4rem, 17vw, 4.6rem);
   font-weight: 900;
   line-height: .84;
   letter-spacing: -.05em;
@@ -293,35 +250,7 @@ body {
 
 /* stations */
 
-.stations { list-style: none; margin: 0; padding: 0; }
 
-.stations li {
-  display: flex;
-  align-items: baseline;
-  gap: 14px;
-  padding: 13px 0;
-  border-top: 1px solid var(--rule);
-}
-
-.stations li:first-child { border-top: 0; padding-top: 0; }
-.stations .st-name { flex: 1; font-size: 15px; }
-
-.stations .st-sub {
-  display: block;
-  font-size: 11px;
-  letter-spacing: .04em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
-}
-
-.stations .st-val {
-  font-size: 19px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -.02em;
-}
-
-.stations .st-empty { color: var(--ink-soft); font-size: 14px; border: 0; padding: 0; }
 
 /* pied de page */
 
@@ -373,7 +302,10 @@ body {
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
-  bottom: calc(env(safe-area-inset-bottom) + 22px);
+  /* Au-dessus du bouton d'action et du ruban : un message ne doit pas masquer
+     le geste principal. */
+  bottom: calc(env(safe-area-inset-bottom) + 132px);
+  max-width: calc(100% - 48px);
   padding: 10px 18px;
   background: var(--ink);
   color: var(--paper);
@@ -383,12 +315,27 @@ body {
 
 /* ------------------------------------------------------------- bain froid */
 
-.bath-plan { margin-bottom: 26px; }
-
+/* Réglage de la durée : moins, valeur, plus, centrés sur une même ligne. */
 .bath-stepper {
   display: flex;
   align-items: center;
-  gap: 18px;
+  justify-content: center;
+  gap: 20px;
+}
+
+.bath-duration {
+  margin: 0;
+  min-width: 116px;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+  font-size: 2.7rem;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -.035em;
+  font-variant-numeric: tabular-nums;
 }
 
 .round {
@@ -403,33 +350,11 @@ body {
   cursor: pointer;
 }
 
-.bath-duration {
-  margin: 0;
-  flex: 1;
-  display: flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: 8px;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
-  font-size: 3.6rem;
-  font-weight: 900;
-  line-height: 1;
-  letter-spacing: -.04em;
-  font-variant-numeric: tabular-nums;
-}
-
 .bath-unit {
   font-size: .28em;
   font-weight: 600;
   letter-spacing: .1em;
   text-transform: uppercase;
-  color: var(--ink-soft);
-}
-
-.bath-note {
-  margin: 14px 0 20px;
-  font-size: 13px;
-  line-height: 1.5;
   color: var(--ink-soft);
 }
 
@@ -445,22 +370,6 @@ body {
   letter-spacing: .01em;
   cursor: pointer;
 }
-
-.rules {
-  list-style: none;
-  margin: 0 0 20px;
-  padding: 0;
-  font-size: 14px;
-  line-height: 1.55;
-}
-
-.rules li {
-  padding: 12px 0;
-  border-top: 1px solid var(--rule);
-  color: var(--ink-soft);
-}
-
-.rules b { color: var(--ink); font-weight: 600; }
 
 /* ----------------------------------------------------- minuteur plein écran */
 
@@ -586,25 +495,21 @@ body.timing { overflow: hidden; }
 }
 
 /* Le geste ne doit pas sélectionner le texte du titre au passage. */
-.statement h1, .readout-value {
-  -webkit-user-select: none;
-  user-select: none;
-}
 
 /* ---------------------------------------------------------- carte du lac */
 
 .map {
   /* Occupe la hauteur restante du premier écran, sans jamais la dépasser. */
-  flex: 1;
   min-height: 190px;
   display: grid;
-  place-items: center;
-  margin: 18px -6px 0;
+  /* Ancrée sous la température : le chiffre et la carte forment un bloc, et
+     l'espace se creuse d'un seul tenant avant le bouton d'action. */
+  place-items: start center;
+  margin: 26px -6px 0;
 }
 
 .map svg { display: block; width: 100%; max-height: 100%; height: auto; overflow: visible; }
 
-.map-note { margin: 6px 0 0; text-align: center; }
 
 /* Le lac se lit comme une surface, pas comme un simple tracé. */
 .map .shore {
@@ -740,3 +645,262 @@ body.timing { overflow: hidden; }
 }
 
 .brief .link-btn { margin-top: 22px; }
+
+/* ------------------------------------------------- position et localisation */
+
+.tools { display: flex; gap: 2px; margin: -6px -8px 0 0; }
+.tools .ghost { margin: 0; }
+
+#locate svg { fill: none; stroke-width: 1.7; }
+#locate.busy { opacity: 1; }
+#locate.busy svg { animation: pulse 1s ease-in-out infinite; }
+
+/* Position de l'utilisateur sur la carte : un point distinct des lieux. */
+.map .me-dot { fill: var(--ink); }
+
+.map .me-halo {
+  fill: color-mix(in srgb, var(--ink) 18%, transparent);
+  stroke: var(--ink);
+  stroke-width: 1;
+}
+
+@supports not (color: color-mix(in srgb, red, blue)) {
+  .map .me-halo { fill: rgba(125, 145, 165, .3); }
+}
+
+/* --------------------------------------------------- appel à l'action */
+
+/* Le geste principal de l'app : lancer le bain. Pleine largeur, à portée de
+   pouce, avec la durée conseillée déjà lisible. */
+.cta {
+  display: block;
+  width: 100%;
+  margin: 14px 0 2px;
+  padding: 16px 20px;
+  border: 0;
+  background: var(--ink);
+  color: var(--paper);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: .01em;
+  cursor: pointer;
+}
+
+.cta-note {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  opacity: .72;
+}
+
+/* Le geste ne doit pas sélectionner les grands caractères au passage. */
+.readout-value { -webkit-user-select: none; user-select: none; }
+
+/* -------------------------------------------- réglage dans les consignes */
+
+.brief .bath-stepper { margin-bottom: 6px; }
+
+.brief-duration {
+  margin: 0;
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+  font-size: 2.6rem;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.brief-rule {
+  margin: 0 0 24px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.brief-sources {
+  margin: 20px 0 0;
+  font-size: 10.5px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+.brief-sources a { color: inherit; }
+
+/* ------------------------------------------------ écran de préparation */
+
+.eyebrow {
+  margin: 18px 0 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.readout-source {
+  margin: 0 0 6px;
+  font-size: 11.5px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+/* Cartes translucides : elles se posent sur le dégradé sans le masquer. */
+.card {
+  display: block;
+  margin-bottom: 12px;
+  padding: 18px;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--paper) 68%, transparent);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+@supports not (color: color-mix(in srgb, red, blue)) {
+  .card { background: rgba(255, 255, 255, .6); }
+}
+
+@media (prefers-color-scheme: dark) {
+  .card { background: rgba(255, 255, 255, .07); }
+}
+
+.card-title {
+  margin: 0 0 12px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.card-note {
+  margin: 12px 0 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  text-align: center;
+  color: var(--ink-soft);
+}
+
+/* --------------------------------------------------------- engagement */
+
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  cursor: pointer;
+}
+
+.check input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.check .box {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  margin-top: 1px;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid var(--rule);
+  border-radius: 8px;
+  background: transparent;
+}
+
+.check .box svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: var(--paper);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0;
+}
+
+.check input:checked ~ .box {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+.check input:checked ~ .box svg { opacity: 1; }
+.check input:focus-visible ~ .box { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+.check-text { font-size: 14px; line-height: 1.45; }
+
+/* ----------------------------------------------------------- action */
+
+.cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  margin: 18px 0 0;
+  padding: 17px 20px;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--ink);
+  color: var(--paper);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Tant que l'engagement n'est pas coché, le bouton reste visiblement inerte. */
+.cta:disabled { opacity: .32; cursor: not-allowed; }
+
+.cta-icon { width: 15px; height: 15px; fill: currentColor; }
+
+.cta-under {
+  margin: 12px 0 0;
+  text-align: center;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+/* --------------------------------------------------- respiration guidée */
+
+.breath {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 132px;
+  margin: 18px 0 4px;
+}
+
+.breath[hidden] { display: none; }
+
+/* Le cercle s'ouvre à l'inspiration, se referme à l'expiration : le rythme se
+   suit des yeux, sans avoir à lire. */
+.breath-ring {
+  position: absolute;
+  width: 116px;
+  height: 116px;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  opacity: .35;
+  transform: scale(.62);
+  transition: transform 200ms linear, opacity 200ms linear;
+}
+
+.breath-word {
+  position: relative;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}

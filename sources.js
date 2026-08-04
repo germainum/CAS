@@ -81,6 +81,15 @@ export function distanceKm(a, b) {
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
+// Lieu proposé le plus proche d'une position, et sa distance. Sert à ouvrir
+// l'app sur l'eau où l'on se trouve, plutôt que sur un choix arbitraire.
+export function nearestSpot(coords, spots = SPOTS) {
+  if (!coords || !isFinite(coords.lat) || !isFinite(coords.lon) || !spots.length) return null;
+  return spots
+    .map((spot) => ({ spot, km: distanceKm(coords, spot) }))
+    .reduce((a, b) => (b.km < a.km ? b : a));
+}
+
 export const isStale = (date, now = Date.now()) =>
   !date || now - toDate(date).getTime() > CFG.staleAfterMs;
 
@@ -450,6 +459,19 @@ export function bathPhase(elapsedSec, totalSec) {
     return { key: 'exit', label: 'Prépare ta sortie', hint: 'Rapproche-toi du bord.' };
   }
   return { key: 'steady', label: 'Reste près du bord', hint: 'Souffle régulier, épaules relâchées.' };
+}
+
+// Respiration guidée : quatre secondes d'inspiration, six d'expiration. Le
+// rythme allongé à l'expiration est ce qui calme la réponse au choc thermique.
+export const BREATH_IN = 4;
+export const BREATH_OUT = 6;
+
+export function breathCue(elapsedSec) {
+  const cycle = BREATH_IN + BREATH_OUT;
+  const t = ((elapsedSec % cycle) + cycle) % cycle;   // robuste aux valeurs négatives
+  return t < BREATH_IN
+    ? { phase: 'in', word: 'Inspirez', progress: t / BREATH_IN, seconds: Math.ceil(BREATH_IN - t) }
+    : { phase: 'out', word: 'Expirez', progress: (t - BREATH_IN) / BREATH_OUT, seconds: Math.ceil(cycle - t) };
 }
 
 export function formatClock(totalSec) {
