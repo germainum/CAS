@@ -5,7 +5,8 @@
 import assert from 'node:assert/strict';
 
 import {
-  CFG, SPOTS, asArray, bestReading, distanceKm, isStale, mood, parseMeasuredStations,
+  BATH_MAX_MINUTES, CFG, SPOTS, asArray, bathPhase, bathPlan, bestReading, distanceKm,
+  formatClock, isStale, mood, parseMeasuredStations,
   parseSeries, parseSnapshot, parseStationMeta, snapshotAge, stampUTC, toDate, urlModelPoint,
 } from '../sources.js';
 
@@ -467,6 +468,88 @@ test('une valeur absente donne une bande neutre, pas une erreur', () => {
     assert.equal(mood(bad).band, 'unknown');
     assert.equal(mood(bad).adj, 'inconnue');
   }
+});
+
+console.log('\nbain froid : durée conseillée');
+
+test('une minute par degré, arrondie', () => {
+  assert.equal(bathPlan(10).minutes, 10);
+  assert.equal(bathPlan(6.4).minutes, 6);
+  assert.equal(bathPlan(6.6).minutes, 7);
+  assert.equal(bathPlan(13.2).minutes, 13);
+});
+
+test('la durée est plafonnée : la règle vise l’eau froide', () => {
+  assert.equal(bathPlan(25).minutes, BATH_MAX_MINUTES);
+  assert.equal(bathPlan(25).capped, true);
+  assert.equal(bathPlan(14).capped, false);
+});
+
+test('jamais moins d’une minute, même près de zéro', () => {
+  assert.equal(bathPlan(0.4).minutes, 1);
+  assert.equal(bathPlan(0).minutes, 1);
+  assert.equal(bathPlan(-1).minutes, 1);
+});
+
+test('au-delà de 18 °C, ce n’est plus un bain froid', () => {
+  assert.equal(bathPlan(12).cold, true);
+  assert.equal(bathPlan(17.9).cold, true);
+  assert.equal(bathPlan(18).cold, false);
+  assert.equal(bathPlan(24).cold, false);
+});
+
+test('sans température, aucun plan n’est inventé', () => {
+  assert.equal(bathPlan(null), null);
+  assert.equal(bathPlan(NaN), null);
+  assert.equal(bathPlan('froid'), null);
+});
+
+console.log('\nbain froid : phases de l’immersion');
+
+test('l’entrée dans l’eau parle de respiration', () => {
+  const p = bathPhase(5, 600);
+  assert.equal(p.key, 'shock');
+  assert.match(p.hint, /inspirations/);
+});
+
+test('le milieu rappelle de rester près du bord', () => {
+  assert.equal(bathPhase(300, 600).key, 'steady');
+  assert.match(bathPhase(300, 600).label, /bord/);
+});
+
+test('la dernière minute annonce la sortie', () => {
+  assert.equal(bathPhase(545, 600).key, 'exit');
+  assert.equal(bathPhase(539, 600).key, 'steady');
+});
+
+test('les seuils se resserrent sur une immersion courte', () => {
+  // Sur 2 minutes, une phase d'entrée de 60 s occuperait la moitié du bain :
+  // elle vaut donc 25 % du total, soit 30 s ici, contre 60 s sur un bain long.
+  assert.equal(bathPhase(29, 120).key, 'shock');
+  assert.equal(bathPhase(31, 120).key, 'steady');
+  assert.equal(bathPhase(91, 120).key, 'exit');
+  // Sur une minute, le plancher de 15 s empêche des phases dérisoires.
+  assert.equal(bathPhase(14, 60).key, 'shock');
+  assert.equal(bathPhase(16, 60).key, 'steady');
+});
+
+test('l’échéance et le dépassement sont un même état, sans ambiguïté', () => {
+  assert.equal(bathPhase(600, 600).key, 'done');
+  assert.equal(bathPhase(900, 600).key, 'done');
+  assert.match(bathPhase(600, 600).label, /Sors/);
+});
+
+test('une durée absurde ne fait pas planter les phases', () => {
+  assert.equal(bathPhase(10, 0).key, 'idle');
+  assert.equal(bathPhase(10, -5).key, 'idle');
+});
+
+test('formatClock affiche minutes et secondes, toujours sur deux chiffres', () => {
+  assert.equal(formatClock(0), '00:00');
+  assert.equal(formatClock(9), '00:09');
+  assert.equal(formatClock(65), '01:05');
+  assert.equal(formatClock(600), '10:00');
+  assert.equal(formatClock(-3), '00:00', 'un reste négatif ne doit pas s’afficher tel quel');
 });
 
 console.log(`\n${passed} tests passés${process.exitCode ? ' — échecs ci-dessus' : ''}`);

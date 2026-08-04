@@ -8,6 +8,7 @@
 // Toute réponse utile est mise en cache (localStorage) : l'app affiche donc
 // toujours quelque chose, hors ligne compris, en signalant l'âge de la donnée.
 
+import { initBath, setWaterTemperature } from './bath.js';
 import {
   CFG, SPOTS, asArray, bestReading, isStale, mood, parseMeasuredStations, parseSeries,
   parseSnapshot, parseStationMeta, snapshotAge, toDate, urlLatestTemperature,
@@ -230,6 +231,9 @@ function renderHero({ value, at, kind, label }) {
   $('readoutSource').textContent = value == null ? label : shortSource(label, at);
 
   document.querySelector('.readout').classList.toggle('stale', value != null && isStale(at));
+
+  // Le minuteur se règle sur la valeur affichée : une minute par degré.
+  setWaterTemperature(value);
 }
 
 function renderStations(list) {
@@ -426,6 +430,7 @@ function init() {
   window.addEventListener('online', () => refresh({ silent: true }));
   setInterval(() => { if (!document.hidden) refresh({ silent: true }); }, CFG.autoRefreshMs);
 
+  initBath();
   maybeShowInstallHint();
 
   if ('serviceWorker' in navigator) {

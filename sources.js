@@ -301,6 +301,52 @@ const UNKNOWN = {
   aside: 'Aucune source ne répond pour l’instant.',
 };
 
+/* ------------------------------------------------------------ bain froid */
+
+// Règle d'usage en eau froide : une minute d'immersion par degré. C'est un
+// PLAFOND, jamais un objectif — sortir plus tôt est toujours la bonne décision.
+// Au-delà de 18 °C la règle perd son sens : ce n'est plus un bain froid, d'où le
+// plafonnement à 20 minutes plutôt qu'une extrapolation absurde.
+export const BATH_MAX_MINUTES = 20;
+export const BATH_COLD_BELOW = 18;
+
+export function bathPlan(t) {
+  if (typeof t !== 'number' || !isFinite(t)) return null;
+  const raw = Math.max(1, Math.round(t));
+  return {
+    minutes: Math.min(raw, BATH_MAX_MINUTES),
+    capped: raw > BATH_MAX_MINUTES,
+    cold: t < BATH_COLD_BELOW,
+    temp: t,
+  };
+}
+
+// Découpage d'une immersion. Les seuils suivent la durée totale : sur trois
+// minutes, une phase d'entrée d'une minute entière serait disproportionnée.
+export function bathPhase(elapsedSec, totalSec) {
+  if (!(totalSec > 0)) return { key: 'idle', label: '', hint: '' };
+  if (elapsedSec >= totalSec) {
+    return { key: 'done', label: 'Sors de l’eau', hint: 'Durée conseillée atteinte.' };
+  }
+  const edge = Math.min(60, Math.max(15, totalSec * 0.25));
+  if (elapsedSec < edge) {
+    return {
+      key: 'shock',
+      label: 'Respire lentement',
+      hint: 'De grandes inspirations lentes pour contrer le choc thermique.',
+    };
+  }
+  if (totalSec - elapsedSec <= edge) {
+    return { key: 'exit', label: 'Prépare ta sortie', hint: 'Rapproche-toi du bord.' };
+  }
+  return { key: 'steady', label: 'Reste près du bord', hint: 'Souffle régulier, épaules relâchées.' };
+}
+
+export function formatClock(totalSec) {
+  const s = Math.max(0, Math.round(totalSec));
+  return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+}
+
 export function mood(t) {
   if (typeof t !== 'number' || !isFinite(t)) return UNKNOWN;
   return MOODS.find((m) => t < m.max) ?? MOODS[MOODS.length - 1];

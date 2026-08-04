@@ -29,10 +29,37 @@ rafraîchir.
   prévision en pointillé.
 - La liste des **stations de mesure** du bassin lémanique avec leur relevé.
 - Une indication de baignade, sans valeur officielle.
+- Un **minuteur de bain froid** et les règles de sécurité qui vont avec.
 
 Dix lieux sont proposés, des Pâquis au Bouveret. Pour en ajouter, complétez la
 constante `SPOTS` dans `sources.js` : le point doit se situer **sur l'eau**, sinon
 la simulation ne renvoie rien.
+
+## Minuteur de bain froid
+
+La durée conseillée découle de la température de l'eau : **une minute par degré**,
+et c'est un plafond, jamais un objectif. Dix minutes à 10 °C. La valeur est
+plafonnée à 20 minutes, car au-delà de 18 °C la règle perd son sens — ce n'est
+plus un bain froid. Elle reste réglable à la main.
+
+Pendant l'immersion, le minuteur passe par trois temps, dont les seuils suivent la
+durée totale : entrée dans l'eau (respiration), régime stable (rester près du
+bord), puis préparation de la sortie. À l'échéance, il compte le dépassement
+plutôt que de s'arrêter en silence.
+
+Deux détails d'implémentation qui comptent :
+
+- le décompte se calcule depuis un **horodatage de départ**, jamais par
+  accumulation de ticks : iOS suspend le JavaScript en arrière-plan, et un
+  compteur incrémental dériverait ;
+- la session est **conservée** : un rechargement en pleine immersion la retrouve,
+  et une sortie l'efface définitivement.
+
+Le signal sonore ne peut pas retentir si l'app est en arrière-plan — iOS y suspend
+l'audio. L'écran le rappelle plutôt que de le taire.
+
+Les règles affichées viennent de la SSS, 24 heures, 20 minutes et la WTA, citées
+dans l'app. Elles ne remplacent pas un avis médical.
 
 ## Sources de données
 
@@ -87,10 +114,11 @@ utile depuis l'iPhone lui-même, il liste les appels réussis ou échoués.
 | `app.css` | mise en forme, thèmes clair et sombre, encoches d'écran |
 | `sources.js` | URL, analyse des réponses, choix de la valeur — sans DOM ni réseau |
 | `app.js` | requêtes, cache local, rendu, cycle de vie |
-| `sw.js` | service worker : coque en cache, lancement hors ligne |
+| `bath.js` | minuteur de bain froid : durée, phases, session |
+| `sw.js` | service worker : réseau d'abord, cache en secours |
 | `manifest.webmanifest` | nom, icônes, mode plein écran |
 | `tools/build-model-data.mjs` | précalcul de `data/model.json` dans la CI |
-| `tools/test-parsers.mjs` | 33 tests sur `sources.js` |
+| `tools/test-parsers.mjs` | 57 tests sur `sources.js` |
 | `tools/check-sources.mjs` | vérification des API en conditions réelles |
 | `tools/make-icons.py` | génération des icônes PNG |
 
