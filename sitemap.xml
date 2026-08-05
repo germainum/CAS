@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Une seule page : l'app est mono-écran. Le sitemap existe surtout pour
+     déclarer l'URL canonique et la fréquence de mise à jour du contenu. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://germainum.github.io/CAS/</loc>
+    <changefreq>hourly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>

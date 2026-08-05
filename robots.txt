@@ -1,0 +1,5 @@
+# Bains Froids Léman — site statique, tout est public.
+User-agent: *
+Allow: /
+
+Sitemap: https://germainum.github.io/CAS/sitemap.xml
