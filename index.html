@@ -151,14 +151,9 @@
   <!-- Bandeau d'action fixe : le geste de lancement ne doit pas dépendre du
        défilement, ni pour le retrouver plus bas, ni pour l'éviter par mégarde
        en scrollant vers la carte ou la courbe.
-       L'invite d'installation vit dedans, et non en flottant pour son compte :
-       deux éléments fixés au même bord finissaient par se recouvrir, chacun
-       ignorant la hauteur de l'autre. Empilés ici, c'est impossible. -->
+       Rien d'autre ne s'y ajoute : c'est un bord d'écran, la place y est comptée,
+       et tout ce qui s'y superpose finit par recouvrir le bouton. -->
   <div class="cta-dock">
-    <div class="install" id="install" hidden>
-      <p>Ajoutez l'app à votre écran d'accueil&nbsp;: <b>Partager</b> → <b>Sur l'écran d'accueil</b>.</p>
-      <button type="button" id="installClose" class="link-btn">Fermer</button>
-    </div>
     <button type="button" id="bathStart" class="cta">
       <svg class="cta-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5-9-5.5Z"/></svg>
       Je me jette à l’eau
@@ -213,6 +208,19 @@
   </section>
 
   <footer class="block foot">
+    <!-- Invite d'installation : une ligne au pied de page, dans la taille des
+         mentions de sources. Elle a d'abord été un panneau flottant, puis une
+         carte dans le bandeau d'action — les deux fois, elle disputait le bas de
+         l'écran au seul bouton qui compte. Ici elle informe sans rien couvrir. -->
+    <p class="install" id="install" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 15.5V4m0 0L8.5 7.5M12 4l3.5 3.5"/>
+        <path d="M5.5 13v6a1.5 1.5 0 0 0 1.5 1.5h10a1.5 1.5 0 0 0 1.5-1.5v-6"/>
+      </svg>
+      <span>Ajoutez l'app à votre écran d'accueil&nbsp;: <b>Partager</b> → <b>Sur l'écran d'accueil</b>.</span>
+      <button type="button" id="installClose" class="link-btn">Fermer</button>
+    </p>
+
     <p class="micro-note">
       <a href="https://www.hydrodaten.admin.ch/" target="_blank" rel="noopener">OFEV</a>
       via <a href="https://api.existenz.ch/" target="_blank" rel="noopener">existenz.ch</a>,

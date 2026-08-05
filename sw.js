@@ -3,7 +3,7 @@
 // modèle. Les API externes passent directement par le réseau, et leurs données
 // sont mises en cache côté application (localStorage), avec leur horodatage.
 
-const CACHE = 'leman-shell-v11';
+const CACHE = 'leman-shell-v12';
 
 const SHELL = [
   './',
@@ -28,8 +28,11 @@ const SHELL = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE)
-      // addAll échoue en bloc : on tolère un fichier manquant.
-      .then((cache) => Promise.allSettled(SHELL.map((url) => cache.add(url))))
+      // addAll échoue en bloc : on tolère un fichier manquant. Et `cache: 'reload'`
+      // plutôt que `cache.add`, qui passerait par le cache HTTP du navigateur et
+      // remplirait la nouvelle version avec des fichiers de l'ancienne.
+      .then((cache) => Promise.allSettled(SHELL.map((url) => fetch(url, { cache: 'reload' })
+        .then((res) => (res.ok ? cache.put(url, res) : null)))))
       .then(() => self.skipWaiting())
   );
 });
@@ -50,6 +53,23 @@ self.addEventListener('activate', (event) => {
 // savoir. Sur une app dont tout l'intérêt est d'afficher une valeur à jour, la
 // fraîcheur passe avant les quelques dizaines de millisecondes gagnées — et le
 // cache continue d'assurer le lancement hors ligne.
+//
+// `cache: 'reload'` n'est pas une précaution de principe. Sans lui, le « réseau
+// d'abord » se fait court-circuiter par le cache HTTP du navigateur : GitHub
+// Pages sert les fichiers avec max-age=600, et Safari a rendu une feuille de
+// style vieille de dix minutes avec un index.html tout neuf. Résultat : une mise
+// en page mélangeant deux versions, dont un panneau resté en position fixe
+// par-dessus le bouton principal, devenu inatteignable. La coque doit arriver
+// d'un seul tenant, ou pas du tout.
+function fetchFresh(request) {
+  try {
+    return fetch(request.url, { cache: 'reload', credentials: 'same-origin' });
+  } catch {
+    // Option `cache` non prise en charge : mieux vaut une requête ordinaire.
+    return fetch(request);
+  }
+}
+
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
@@ -58,7 +78,7 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) return;   // API : réseau direct
 
   event.respondWith(
-    fetch(request)
+    fetchFresh(request)
       .then((res) => {
         if (res && res.ok) {
           const copy = res.clone();
