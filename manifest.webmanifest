@@ -1,7 +1,7 @@
 {
-  "name": "Température du Léman",
+  "name": "Bains Froids Léman",
   "short_name": "Léman",
-  "description": "La température de l'eau du lac Léman, lieu par lieu.",
+  "description": "La température du lac, et le souffle pour y entrer.",
   "lang": "fr",
   "dir": "ltr",
   "start_url": "./",
