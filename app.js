@@ -12,8 +12,8 @@ import { initBath, setWaterTemperature } from './bath.js';
 import { renderLakeMap } from './lakemap.js';
 import {
   CFG, SPOTS, asArray, bestReading, isStale, mood, nextIndex, parseMeasuredStations,
-  nearestSpot, parseSeries, parseSnapshot, parseStationMeta, snapshotAge,
-  snapshotCurrentTemps, swipeDecision, toDate, urlLatestTemperature, urlModelPoint,
+  nearestSpot, parseSeries, parseSnapshot, parseStationMeta, snapshotAge, upcomingHours,
+  snapshotCurrentTemps, swipeDecision, toDate, trend, urlLatestTemperature, urlModelPoint,
   urlModelSnapshot, urlStationMeta,
 } from './sources.js';
 
@@ -47,23 +47,17 @@ function formatAge(value) {
   return d === 1 ? 'hier' : `il y a ${d} jours`;
 }
 
-// Deuxième ligne de la lecture chiffrée, tenue courte : elle est en capitales
-// sous le nom du lieu et ne doit pas se casser sur trois lignes.
-// « mesure · Chillon » + 25 min → « CHILLON · 25 MIN », et le nom de la station
-// disparaît quand il répète celui du lieu.
-function shortSource(label, at) {
-  const age = formatAge(at).replace(/^il y a /, '');
-  const station = /^mesure/.test(label) ? label.replace(/^mesure\s*·\s*/, '') : null;
-  let head = label;
-  if (station) {
-    const spot = currentSpot.name.toLowerCase();
-    const low = station.toLowerCase();
-    // « Genève » → « mesure » ; « Genève, sortie du lac » → « sortie du lac ».
-    head = low === spot ? 'mesure'
-      : low.startsWith(`${spot},`) ? station.slice(spot.length + 1).trim()
-      : station;
-  }
-  return [head, age].filter(Boolean).join(' · ');
+// Nom court de la source, pour le repère « source » : le nom de la station sans
+// répéter celui du lieu — « mesure · Genève, sortie du lac » → « Sortie du lac ».
+function sourceHead(label) {
+  if (!/^mesure/.test(label)) return label === 'modèle Eawag' ? 'Eawag' : label;
+  const station = label.replace(/^mesure\s*·\s*/, '');
+  const spot = currentSpot.name.toLowerCase();
+  const low = station.toLowerCase();
+  const head = low === spot ? 'mesure'
+    : low.startsWith(`${spot},`) ? station.slice(spot.length + 1).trim()
+    : station;
+  return head.charAt(0).toUpperCase() + head.slice(1);
 }
 
 function note(source, ok, detail) {
@@ -214,19 +208,45 @@ function renderSpots() {
   $('places').replaceChildren(...SPOTS.map((spot) => {
     const b = document.createElement('button');
     b.type = 'button';
-    b.textContent = spot.name;
     b.setAttribute('role', 'tab');
+    b.dataset.key = spot.key;
+
+    const temp = document.createElement('span');
+    temp.className = 'tile-temp';
+    const name = document.createElement('span');
+    name.className = 'tile-name';
+    name.textContent = spot.name;
+
+    b.append(temp, name);
     b.addEventListener('click', () => selectSpot(spot));
     return b;
   }));
+  refreshTiles();
+}
+
+// Les tuiles portent la température de chaque lieu : le choix se fait sur la
+// valeur, pas seulement sur le nom.
+function refreshTiles() {
+  for (const b of $('places').children) {
+    b.querySelector('.tile-temp').textContent = `${formatTemp(spotTemps[b.dataset.key])}°`;
+  }
 }
 
 function markSelectedChip() {
+  refreshTiles();
   [...$('places').children].forEach((b, i) => {
     const selected = SPOTS[i].key === currentSpot.key;
     b.setAttribute('aria-selected', String(selected));
     if (selected) b.scrollIntoView({ inline: 'center', block: 'nearest' });
   });
+}
+
+// « +0,4° » se lit d'un coup d'œil ; sous un dixième, l'écart n'est pas un signal.
+function formatTrend(delta) {
+  if (delta == null || !isFinite(delta)) return '—';
+  if (Math.abs(delta) < 0.1) return 'stable';
+  const signe = delta > 0 ? '+' : '−';
+  return `${signe}${Math.abs(delta).toFixed(1).replace('.', ',')}°`;
 }
 
 function renderHero({ value, at, kind, label }) {
@@ -237,12 +257,60 @@ function renderHero({ value, at, kind, label }) {
   $('readoutPlace').textContent = located?.key === currentSpot.key
     ? `${currentSpot.name} · à ${formatKm(located.km)} km`
     : currentSpot.name;
-  $('readoutSource').textContent = value == null ? label : shortSource(label, at);
+  // Le détail de la source vit dans les trois repères ci-dessous ; cette ligne
+  // ne parle que lorsqu'il n'y a rien à afficher.
+  $('readoutSource').textContent = value == null ? label : '';
+
+  $('factTrend').textContent = formatTrend(trend(lastSeries, Date.now()));
+  $('factAge').textContent = formatAge(at).replace(/^il y a /, '') || '—';
+  $('factSource').textContent = sourceHead(label);
 
   document.querySelector('.readout').classList.toggle('stale', value != null && isStale(at));
 
   // Le minuteur se règle sur la valeur affichée : une minute par degré.
   setWaterTemperature(value);
+}
+
+// « Quand y aller » : une barre par échéance du modèle, la plus chaude en plein.
+function renderBars(points) {
+  const box = $('bars');
+  const { slots, warmest } = upcomingHours(points, Date.now(), 6);
+
+  if (!slots.length) {
+    box.replaceChildren(Object.assign(document.createElement('p'),
+      { className: 'bars-empty', textContent: 'Prévision indisponible.' }));
+    $('barsNote').textContent = 'modèle Eawag';
+    return;
+  }
+
+  const values = slots.map((s) => s.value);
+  const lo = Math.min(...values) - 0.8;
+  const hi = Math.max(...values) + 0.2;
+
+  box.replaceChildren(...slots.map((slot) => {
+    const li = document.createElement('li');
+    if (slot.best) li.className = 'best';
+
+    const val = document.createElement('span');
+    val.className = 'bar-val';
+    val.textContent = `${formatTemp(slot.value)}°`;
+
+    const bar = document.createElement('span');
+    bar.className = 'bar';
+    // Hauteur relative à l'amplitude affichée : les écarts d'un demi-degré
+    // resteraient invisibles sur une échelle partant de zéro.
+    bar.style.height = `${(8 + ((slot.value - lo) / Math.max(0.6, hi - lo)) * 78).toFixed(1)}%`;
+
+    const hour = document.createElement('span');
+    hour.className = 'bar-hour';
+    hour.textContent = slot.at.toLocaleTimeString('fr-CH', { hour: '2-digit', minute: '2-digit' });
+
+    li.append(val, bar, hour);
+    return li;
+  }));
+
+  const quand = warmest.at.toLocaleTimeString('fr-CH', { hour: '2-digit', minute: '2-digit' });
+  $('barsNote').textContent = `le plus chaud vers ${quand}`;
 }
 
 function renderChart(points) {
@@ -308,7 +376,9 @@ const reviveSeries = (raw) => (raw || [])
 function paint(stations, series, hint = 'modèle Eawag') {
   lastSeries = series || [];
   lastHint = hint;
+  renderBars(series);
   renderChart(series);
+  refreshTiles();
   renderHero(bestReading(currentSpot, stations, series));
   $('chartHint').textContent = hint;
   drawMap();

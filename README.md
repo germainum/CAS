@@ -22,26 +22,38 @@ rafraîchir.
 
 ## Ce qu'affiche l'app
 
-L'écran d'accueil est un écran de préparation :
+L'écran d'accueil est un écran de préparation : il tient en une hauteur d'écran et
+se lit de haut en bas, du constat au geste.
 
-- la **température de l'eau** au lieu courant, avec l'origine de la valeur —
-  `mesure` (station officielle proche) ou `modèle Eawag` — et son âge ; une valeur
-  de plus de six heures est estompée ;
+- la **température de l'eau** au lieu courant, en très gros — c'est la seule
+  information dont dépend tout le reste ; elle est estompée au-delà de six heures ;
+- trois **repères** sous le chiffre : la **tendance sur 24 h** (`+0,4°`, `stable`),
+  l'**âge du relevé**, et la **source** — nom de la station officielle, ou `Eawag`
+  pour la simulation. Aucun de ces trois ne répète le chiffre : ils disent d'où il
+  vient et s'il bouge ;
 - la **durée conseillée**, réglable, qui découle de la température ;
+- les **dix lieux en tuiles**, chacune portant sa propre température : le choix se
+  fait sur la valeur, pas seulement sur le nom ;
+- **« Quand y aller »** : une barre par échéance du modèle sur les dix-huit heures
+  qui viennent, la plus chaude en violet plein. L'échelle est resserrée sur
+  l'amplitude affichée, faute de quoi un écart d'un demi-degré serait invisible ;
 - un **engagement à cocher** : « je ne suis pas seul ». Le bouton de lancement
   reste inerte tant qu'il ne l'est pas ;
 - le **lieu le plus proche de vous** est sélectionné d'emblée si la localisation
   est autorisée, avec la distance affichée.
+
+L'engagement et le bouton sont poussés en bas de l'écran par une marge
+automatique : le vide éventuel se creuse au-dessus d'eux, pas entre les deux.
 
 En dessous : une **carte du lac** portant la température des dix lieux,
 comparables entre elles car toutes issues du modèle, et une **courbe sur sept
 jours** — cinq écoulés en trait plein, deux de prévision en pointillé.
 
 Dix lieux sont proposés, des Pâquis au Bouveret. On passe de l'un à l'autre par
-le ruban en bas d'écran, par **balayage horizontal** sur le premier écran, ou par
-les flèches du clavier. Le balayage cède la place au défilement dès que le geste
-est vertical, et ne se déclenche pas depuis le ruban, qui défile pour son propre
-compte. Aux extrémités, il s'arrête plutôt que de boucler.
+les tuiles, par un **point de la carte**, par **balayage horizontal** sur le premier
+écran, ou par les flèches du clavier. Le balayage cède la place au défilement dès que le geste
+est vertical, et ne se déclenche pas depuis les tuiles, qui défilent pour leur
+propre compte. Aux extrémités, il s'arrête plutôt que de boucler.
 
 Pour ajouter un lieu, complétez la constante `SPOTS` dans `sources.js` : le point
 doit se situer **sur l'eau**, sinon la simulation ne renvoie rien.
@@ -102,6 +114,12 @@ depuis son GeoJSON en `[lat, lon]` dans `sources.js`. Trente-huit points : la
 silhouette est juste, mais lissée près des rives — ce n'est pas une carte de
 navigation.
 
+Toucher la carte sélectionne le lieu **le plus proche du doigt**, sur une seule
+zone sensible couvrant le dessin. Une cible par lieu semblait plus naturelle, mais
+au Haut-Lac, Montreux et Le Bouveret ne sont qu'à quatre kilomètres : des cibles
+confortables s'y recouvraient et l'une des deux devenait inatteignable. Les tuiles
+restent la commande accessible — la carte est un raccourci au doigt.
+
 Un test vérifie que **les dix lieux tombent dans l'eau**, et il travaille : il a
 d'abord pris Genève et Nyon en défaut sur un contour dessiné à la main, puis
 Genève, Le Bouveret, Évian et Thonon sur le contour réel, plus sévère près des
@@ -155,7 +173,7 @@ utile depuis l'iPhone lui-même, il liste les appels réussis ou échoués.
 | `sw.js` | service worker : réseau d'abord, cache en secours |
 | `manifest.webmanifest` | nom, icônes, mode plein écran |
 | `tools/build-model-data.mjs` | précalcul de `data/model.json` dans la CI |
-| `tools/test-parsers.mjs` | 62 tests sur `sources.js` |
+| `tools/test-parsers.mjs` | 86 tests sur `sources.js` |
 | `tools/check-sources.mjs` | vérification des API en conditions réelles |
 | `tools/make-icons.py` | génération des icônes PNG |
 

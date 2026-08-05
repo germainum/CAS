@@ -13,8 +13,8 @@ from PIL import Image, ImageDraw
 OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "icons")
 BASE = 2048   # rendu super-échantillonné, réduit ensuite (anticrénelage)
 
-TOP = (5, 46, 78)        # bleu profond
-BOTTOM = (37, 190, 205)  # turquoise
+TOP = (109, 74, 240)     # violet profond
+BOTTOM = (196, 178, 255) # lilas
 WHITE = (255, 255, 255)
 MERCURY = (255, 96, 92)
 

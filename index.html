@@ -6,8 +6,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="La température de l'eau du lac Léman, lieu par lieu, sur votre iPhone.">
 
-<meta name="theme-color" content="#f2f5f9" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0a0e13" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#ece7fe" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#13131d" media="(prefers-color-scheme: dark)">
 <meta name="color-scheme" content="light dark">
 
 <link rel="manifest" href="manifest.webmanifest">
@@ -26,7 +26,7 @@
 
 <div class="app">
 
-  <!-- Premier écran : la température en grand, puis l'affirmation. -->
+  <!-- Écran de préparation : température, durée, engagement, action. -->
   <section class="screen">
 
     <header class="top">
@@ -51,6 +51,21 @@
       <p class="readout-source" id="readoutSource"></p>
     </div>
 
+    <ul class="facts">
+      <li>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17.5 9.5 12l3.5 3.5L20 8"/><path d="M15 8h5v5"/></svg>
+        <span><b id="factTrend">—</b>24 h</span>
+      </li>
+      <li>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+        <span><b id="factAge">—</b>relevé</span>
+      </li>
+      <li>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15c3-4 5-4 8 0s5 4 8 0"/><path d="M4 9c3-4 5-4 8 0s5 4 8 0"/></svg>
+        <span><b id="factSource">—</b>source</span>
+      </li>
+    </ul>
+
     <div class="card">
       <p class="card-title">Durée</p>
       <div class="bath-stepper">
@@ -59,6 +74,15 @@
         <button type="button" id="bathPlus" class="round" aria-label="Une minute de plus">+</button>
       </div>
       <p class="card-note" id="bathNote">Durée conseillée d'après la température.</p>
+    </div>
+
+    <nav class="places" id="places" aria-label="Choisir un lieu"></nav>
+
+    <!-- Quand y aller : une barre par échéance du modèle, la plus chaude en
+         plein. Sa place est ici, avec la décision, et non plus bas. -->
+    <div class="card">
+      <p class="card-title">Quand y aller<span class="card-aside" id="barsNote">modèle Eawag</span></p>
+      <ul class="bars" id="bars"></ul>
     </div>
 
     <!-- Engagement explicite : la règle la plus importante ne se lit pas en
@@ -77,19 +101,22 @@
     </button>
   </section>
 
-  <!-- La carte, en dessous : comparer les lieux vient après le geste. -->
+  <!-- La carte : comparer les lieux vient après le geste. -->
   <section class="block">
-    <nav class="places" id="places" aria-label="Choisir un lieu"></nav>
-    <div class="map" id="map"></div>
+    <h2 class="micro">Le lac <span class="micro-note">températures comparables</span></h2>
+    <div class="card">
+      <div class="map" id="map"></div>
+    </div>
   </section>
 
-  <!-- Détails, sous la ligne de flottaison. -->
   <section class="block">
     <h2 class="micro">Sept jours <span id="chartHint" class="micro-note">modèle Eawag</span></h2>
-    <div class="chart" id="chart"></div>
-    <p class="micro-note legend">
-      <span class="key"></span>simulé<span class="key key-future"></span>prévision
-    </p>
+    <div class="card">
+      <div class="chart" id="chart"></div>
+      <p class="micro-note legend">
+        <span class="key"></span>simulé<span class="key key-future"></span>prévision
+      </p>
+    </div>
   </section>
 
   <footer class="block foot">

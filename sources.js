@@ -466,6 +466,40 @@ export function breathCue(elapsedSec) {
     : { phase: 'out', word: 'Expirez', progress: (t - BREATH_IN) / BREATH_OUT, seconds: Math.ceil(cycle - t) };
 }
 
+// Prochaines échéances de la série du modèle : de quoi répondre à « quand y
+// aller ? » plutôt qu'à « quelle température il fait ». Le pas est celui du
+// modèle, trois heures en pratique.
+export function upcomingHours(points, now = Date.now(), count = 6) {
+  const next = (points || [])
+    .filter((p) => p.at.getTime() >= now - 30 * 60 * 1000)
+    .slice(0, count);
+  if (!next.length) return { slots: [], warmest: null };
+
+  const warmest = next.reduce((a, b) => (b.value > a.value ? b : a));
+  return {
+    slots: next.map((p) => ({ ...p, best: p === warmest })),
+    warmest,
+  };
+}
+
+// Tendance sur vingt-quatre heures : la valeur du modèle la plus proche de
+// maintenant moins celle de la veille. Dit si le lac se réchauffe, ce qu'un
+// chiffre isolé ne dit pas. `null` quand la série ne remonte pas assez loin —
+// sans ce garde-fou, le point le plus ancien disponible ferait office de veille
+// et l'écart annoncé n'aurait aucun rapport avec vingt-quatre heures.
+export function trend(points, now = Date.now(), spanMs = 24 * 3600 * 1000) {
+  const closest = (t) => (points || []).reduce(
+    (best, p) => (!best || Math.abs(p.at.getTime() - t) < Math.abs(best.at.getTime() - t) ? p : best),
+    null,
+  );
+  const then = closest(now - spanMs);
+  const here = closest(now);
+  if (!then || !here) return null;
+  if (Math.abs(then.at.getTime() - (now - spanMs)) > spanMs / 4) return null;
+  if (Math.abs(here.at.getTime() - now) > spanMs / 4) return null;
+  return here.value - then.value;
+}
+
 export function formatClock(totalSec) {
   const s = Math.max(0, Math.round(totalSec));
   return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;

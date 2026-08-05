@@ -21,7 +21,9 @@ const BAND_COLOR = {
 // Côté où poser l'étiquette : au nord pour la rive suisse, au sud pour la rive
 // française. Les lieux serrés du Haut-Lac sont écartés à la main.
 const LABEL_SIDE = {
-  geneve: 'sw', nyon: 'sw', morges: 'n', lausanne: 'n', vevey: 'n',
+  // Morges est renvoyée au sud-ouest : au nord, son étiquette touchait celle de
+  // Lausanne, à quarante-sept unités seulement sur ce cadrage.
+  geneve: 'sw', nyon: 'sw', morges: 'sw', lausanne: 'n', vevey: 'n',
   montreux: 'e', bouveret: 's', evian: 's', thonon: 's', yvoire: 's',
 };
 
@@ -48,10 +50,7 @@ export function renderLakeMap(box, { temps = {}, selectedKey, onSelect, user = n
     const [dx, dy, anchor] = OFFSETS[LABEL_SIDE[spot.key] ?? 'n'];
     const on = spot.key === selectedKey;
 
-    return `<g class="spot${on ? ' on' : ''}" data-key="${esc(spot.key)}" role="button"`
-      + ` tabindex="0" aria-label="${esc(spot.name)}, ${fmt(t)} degrés">`
-      // Cible tactile large : le point visible ne fait que quelques pixels.
-      + `<circle class="hit" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="16"/>`
+    return `<g class="spot${on ? ' on' : ''}" data-key="${esc(spot.key)}">`
       + (on ? `<circle class="ring" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="8.5"/>` : '')
       + `<circle class="dot" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${on ? 5.5 : 4}"`
       + ` fill="${BAND_COLOR[band] ?? BAND_COLOR.unknown}"/>`
@@ -61,6 +60,15 @@ export function renderLakeMap(box, { temps = {}, selectedKey, onSelect, user = n
       + ` text-anchor="${anchor}">${esc(spot.name)}</text>`
       + '</g>';
   }).join('');
+
+  // Une seule zone sensible, plutôt qu'une cible par lieu : au Haut-Lac,
+  // Montreux et Le Bouveret ne sont qu'à quatre kilomètres, et des cibles
+  // confortables s'y recouvriraient — l'une des deux devenant inatteignable.
+  // Le lieu retenu est donc le plus proche du doigt.
+  const positions = SPOTS.map((spot) => {
+    const [x, y] = project(spot.lat, spot.lon);
+    return { key: spot.key, x, y };
+  });
 
   // Position de l'utilisateur, si elle est connue et dans le cadre.
   let me = '';
@@ -75,16 +83,25 @@ export function renderLakeMap(box, { temps = {}, selectedKey, onSelect, user = n
 
   box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img"`
     + ' aria-label="Carte du Léman et température de l’eau par lieu">'
-    + `<path class="shore" d="${shore}"/>${me}${marks}</svg>`;
+    + `<path class="shore" d="${shore}"/>${me}${marks}`
+    + `<rect class="hitarea" x="0" y="0" width="${W}" height="${H}" aria-hidden="true"/></svg>`;
 
   if (!onSelect) return;
 
-  const pick = (target) => {
-    const key = target.closest('.spot')?.dataset.key;
-    if (key) onSelect(key);
-  };
-  box.querySelector('svg').addEventListener('click', (e) => pick(e.target));
-  box.querySelector('svg').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(e.target); }
+  const svg = box.querySelector('svg');
+
+  // Le viewBox conserve son rapport : une mise à l'échelle linéaire suffit à
+  // repasser des pixels de l'écran aux unités du dessin.
+  svg.addEventListener('click', (e) => {
+    const r = svg.getBoundingClientRect();
+    if (!r.width) return;
+    const x = ((e.clientX - r.left) / r.width) * W;
+    const y = ((e.clientY - r.top) / r.height) * H;
+
+    const near = positions
+      .map((p) => ({ ...p, d: Math.hypot(p.x - x, p.y - y) }))
+      .reduce((a, b) => (b.d < a.d ? b : a));
+    // Au-delà, le geste ne visait aucun lieu en particulier.
+    if (near.d <= 34) onSelect(near.key);
   });
 }
