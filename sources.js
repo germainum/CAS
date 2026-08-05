@@ -310,6 +310,114 @@ const UNKNOWN = {
   aside: 'Aucune source ne répond pour l’instant.',
 };
 
+/* --------------------------------------------------------- phrase du jour */
+
+// Ce que l'app dit du jour, plutôt que ce qu'elle mesure. Le ton reste posé :
+// jamais une performance à accomplir, jamais un encouragement appuyé.
+// Plusieurs formules par bande, choisies d'après le jour — la phrase ne bouge
+// pas d'une heure à l'autre, mais elle change demain.
+const GREETINGS = {
+  cold: [
+    'L’eau est vive. Trois respirations, et tu verras.',
+    'C’est un jour où le froid se mérite. Prends ton temps.',
+    'Aujourd’hui, l’eau ne pardonne pas la précipitation.',
+  ],
+  cool: [
+    'L’eau est franche. De quoi se sentir vivant.',
+    'Un jour net et froid. Entre doucement.',
+    'L’eau te réveillera. C’est un peu l’idée.',
+  ],
+  fresh: [
+    'L’eau est clémente aujourd’hui. Savoure.',
+    'Fraîche, sans être dure. Reste le temps que tu veux.',
+    'Une eau facile à aborder. Profites-en.',
+  ],
+  good: [
+    'L’eau est douce. Rien ne t’oblige à te presser.',
+    'Un jour sans effort. Laisse-toi flotter.',
+    'L’eau t’accueille. Autant en profiter longtemps.',
+  ],
+  warm: [
+    'L’eau est tiède. Ce n’est plus vraiment un bain froid.',
+    'Une eau de fin d’été. Le froid attendra.',
+  ],
+  unknown: [
+    'Aucune source ne répond. L’eau est là quand même.',
+  ],
+};
+
+// Numéro de jour local : deux appels le même jour donnent le même index, et
+// l'index change à minuit. En UTC, la phrase changerait à deux heures du matin.
+export function dayNumber(date = new Date()) {
+  const d = date instanceof Date ? date : new Date(date);
+  return Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000);
+}
+
+export function greeting(t, date = new Date()) {
+  const list = GREETINGS[mood(t).band] ?? GREETINGS.unknown;
+  return list[((dayNumber(date) % list.length) + list.length) % list.length];
+}
+
+/* ---------------------------------------------------- après le bain : bilan */
+
+// Le journal des immersions, tel qu'il est relu ici : une entrée par sortie,
+// avec l'horodatage, la durée tenue et la température de l'eau.
+const asEntries = (raw) => (raw || [])
+  .map((e) => ({ at: toDate(e.at), minutes: Number(e.minutes), temp: Number(e.temp) }))
+  .filter((e) => e.at && isFinite(e.minutes) && e.minutes > 0)
+  .sort((a, b) => b.at - a.at);
+
+// Jours consécutifs, en remontant depuis aujourd'hui. Une absence hier
+// n'interrompt pas la série si l'on s'est baigné aujourd'hui, et une série qui
+// s'est arrêtée avant-hier vaut zéro : c'est ce qu'on attend d'un compteur de
+// régularité, sans quoi il resterait figé sur un exploit ancien.
+function streakOf(entries, now) {
+  const today = dayNumber(new Date(now));
+  const days = new Set(entries.map((e) => dayNumber(e.at)));
+  if (!days.has(today) && !days.has(today - 1)) return 0;
+
+  let day = days.has(today) ? today : today - 1;
+  let n = 0;
+  while (days.has(day)) { n++; day--; }
+  return n;
+}
+
+export function bathStats(raw, now = Date.now()) {
+  const entries = asEntries(raw);
+  if (!entries.length) {
+    return { count: 0, streak: 0, coldest: null, minutesWeek: 0, last: null };
+  }
+  const weekAgo = now - 7 * 86400000;
+  const temps = entries.map((e) => e.temp).filter((v) => isFinite(v));
+  return {
+    count: entries.length,
+    streak: streakOf(entries, now),
+    coldest: temps.length ? Math.min(...temps) : null,
+    minutesWeek: entries
+      .filter((e) => e.at.getTime() >= weekAgo)
+      .reduce((sum, e) => sum + e.minutes, 0),
+    last: entries[0],
+  };
+}
+
+// Le bilan en une phrase. « 5 jours que tu réponds présent » plutôt qu'une
+// série à défendre : ce qui se compte ici est une habitude, pas un score.
+export function statsPhrase(stats) {
+  if (!stats || !stats.count) return '';
+  if (stats.streak >= 2) return `${stats.streak} jours que tu réponds présent.`;
+  if (stats.count === 1) return 'Première fois notée. À bientôt, peut-être.';
+  return `${stats.count} immersions, à ton rythme.`;
+}
+
+// Texte de partage. Sobre : la donnée, le lieu, rien de plus. Une formule
+// triomphale vieillirait mal sur le fil de quelqu'un d'autre.
+export function shareText({ minutes, temp, place } = {}) {
+  const m = isFinite(minutes) ? `${Math.round(minutes)} min` : 'un bain';
+  const t = isFinite(temp) ? ` à ${temp.toFixed(1).replace('.', ',')}°` : '';
+  const où = place ? ` — ${place}, lac Léman` : ' dans le Léman';
+  return `${m}${t}${où}.`;
+}
+
 /* ------------------------------------------------------------ carte du lac */
 
 // Contour du Léman, en [lat, lon]. Extrait de Natural Earth 10m (domaine

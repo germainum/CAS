@@ -122,6 +122,10 @@
       <p class="readout-source" id="readoutSource"></p>
     </div>
 
+    <!-- Ce que l'app dit du jour. Change avec la température et avec la date :
+         sans cela, la même phrase deux semaines de suite ne veut plus rien dire. -->
+    <p class="greeting" id="greeting"></p>
+
     <ul class="facts">
       <li>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17.5 9.5 12l3.5 3.5L20 8"/><path d="M15 8h5v5"/></svg>
@@ -129,7 +133,7 @@
       </li>
       <li>
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
-        <span><b id="factAge">—</b>relevé</span>
+        <span><b id="factAge">—</b><span id="factAgeLabel">relevé</span></span>
       </li>
       <li>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15c3-4 5-4 8 0s5 4 8 0"/><path d="M4 9c3-4 5-4 8 0s5 4 8 0"/></svg>
@@ -293,10 +297,34 @@
       Sortez immédiatement en cas d'euphorie inhabituelle ou de tremblements violents.
     </p>
     <div class="timer-actions">
-      <button type="button" id="timerDone" class="solid">Je sors</button>
+      <button type="button" id="timerDone" class="cta">Je sors</button>
       <button type="button" id="timerCancel" class="link-btn">Annuler</button>
     </div>
     <p class="timer-note">Gardez l'écran allumé : iOS suspend le minuteur en arrière-plan.</p>
+  </div>
+
+  <!-- Après la sortie : le moment où l'app dit quelque chose plutôt que de
+       disparaître. « Voilà. » sans félicitations, la donnée du jour, et le geste
+       qui inscrit l'immersion au journal. -->
+  <div class="after" id="after">
+    <p class="after-word">Voilà.</p>
+    <p class="after-line" id="afterLine">Rien de spectaculaire, et pourtant.</p>
+
+    <div class="after-facts">
+      <p><b id="afterMinutes">--</b><span>minutes</span></p>
+      <p><b id="afterTemp">--</b><span>degrés</span></p>
+    </div>
+
+    <p class="after-stats" id="afterStats"></p>
+
+    <div class="timer-actions">
+      <button type="button" id="afterKeep" class="cta">
+        <svg class="cta-tick" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5 6.2 12 13 4"/></svg>
+        J'y étais
+      </button>
+      <button type="button" id="afterShare" class="link-btn" hidden>Partager</button>
+      <button type="button" id="afterClose" class="link-btn">Fermer</button>
+    </div>
   </div>
 </div>
 

@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import {
   BATH_MAX_MINUTES, CFG, LAKE_OUTLINE, SPOTS, asArray, bathCoach, bathPhase, bathPlan, bestReading,
   breathCue, distanceKm, nearestSpot, pointInPolygon, projectPoints, snapshotCurrentTemps,
-  trend,
+  bathStats, dayNumber, greeting, shareText, statsPhrase, trend,
   formatClock, isStale, mood, nextIndex, parseMeasuredStations, swipeDecision,
   parseSeries, parseSnapshot, parseStationMeta, snapshotAge, stampUTC, toDate, urlModelPoint,
 } from '../sources.js';
@@ -773,6 +773,85 @@ test('sur un bain très court, les seuils relatifs priment sur ceux à heure fix
 test('sans durée, aucun message n’est inventé', () => {
   assert.equal(bathCoach(10, 0), '');
   assert.equal(bathCoach(10, -5), '');
+});
+
+console.log('\nphrase du jour');
+
+test('la phrase suit la bande de température', () => {
+  const jour = new Date('2026-08-04T12:00:00');
+  assert.match(greeting(6, jour), /vive|mérite|précipitation/);
+  assert.match(greeting(16, jour), /clémente|Fraîche|facile/);
+  assert.match(greeting(26, jour), /tiède|fin d’été/);
+});
+
+test('elle ne bouge pas dans la journée, et change le lendemain', () => {
+  const matin = new Date('2026-08-04T06:30:00');
+  const soir = new Date('2026-08-04T22:45:00');
+  assert.equal(greeting(16, matin), greeting(16, soir));
+  assert.notEqual(greeting(16, matin), greeting(16, new Date('2026-08-05T06:30:00')));
+});
+
+test('sans température, l’app ne fait pas semblant', () => {
+  assert.match(greeting(null), /Aucune source/);
+});
+
+test('dayNumber change à minuit local, pas à minuit UTC', () => {
+  // 23 h 30 puis 00 h 30 : deux jours distincts, quelle que soit la zone.
+  assert.equal(dayNumber(new Date('2026-08-04T23:30:00')), dayNumber(new Date('2026-08-04T08:00:00')));
+  assert.equal(dayNumber(new Date('2026-08-05T00:30:00')), dayNumber(new Date('2026-08-04T23:30:00')) + 1);
+});
+
+console.log('\nbilan des immersions');
+
+const bain = (jours, minutes = 10, temp = 14) => ({
+  at: new Date(NOW - jours * 86400000).toISOString(), minutes, temp,
+});
+
+test('la série compte les jours consécutifs', () => {
+  assert.equal(bathStats([bain(0), bain(1), bain(2)], NOW).streak, 3);
+});
+
+test('un jour manqué au milieu arrête la série là', () => {
+  assert.equal(bathStats([bain(0), bain(1), bain(3), bain(4)], NOW).streak, 2);
+});
+
+test('s’être baigné hier suffit : la série tient jusqu’à la fin de la journée', () => {
+  // Sans cette tolérance, la série tomberait à zéro chaque matin avant le bain.
+  assert.equal(bathStats([bain(1), bain(2)], NOW).streak, 2);
+});
+
+test('une série interrompue avant-hier ne vaut plus rien', () => {
+  assert.equal(bathStats([bain(2), bain(3), bain(4)], NOW).streak, 0);
+});
+
+test('deux bains le même jour ne comptent qu’un jour de série', () => {
+  assert.equal(bathStats([bain(0), bain(0.2), bain(1)], NOW).streak, 2);
+});
+
+test('la plus froide et les minutes de la semaine', () => {
+  const s = bathStats([bain(0, 5, 12.4), bain(2, 8, 9.1), bain(20, 30, 4.0)], NOW);
+  assert.equal(s.coldest, 4);
+  assert.equal(s.minutesWeek, 13, 'le bain d’il y a vingt jours ne compte pas');
+  assert.equal(s.count, 3);
+});
+
+test('un journal vide ou abîmé ne fait rien planter', () => {
+  assert.deepEqual(bathStats([], NOW), { count: 0, streak: 0, coldest: null, minutesWeek: 0, last: null });
+  assert.equal(bathStats(null, NOW).count, 0);
+  assert.equal(bathStats([{ at: 'nawak', minutes: 5 }, { at: NOW, minutes: 0 }], NOW).count, 0);
+});
+
+test('la phrase de bilan reste une habitude, pas un score', () => {
+  assert.match(statsPhrase(bathStats([bain(0), bain(1)], NOW)), /2 jours que tu réponds présent/);
+  assert.match(statsPhrase(bathStats([bain(0)], NOW)), /Première fois/);
+  assert.match(statsPhrase(bathStats([bain(0), bain(5)], NOW)), /2 immersions/);
+  assert.equal(statsPhrase(bathStats([], NOW)), '');
+});
+
+test('le texte de partage dit la donnée, sans triomphe', () => {
+  assert.equal(shareText({ minutes: 20, temp: 12.4, place: 'Vevey' }), '20 min à 12,4° — Vevey, lac Léman.');
+  assert.equal(shareText({ minutes: 8, temp: 9 }), '8 min à 9,0° dans le Léman.');
+  assert.equal(shareText({}), 'un bain dans le Léman.');
 });
 
 test('formatClock affiche minutes et secondes, toujours sur deux chiffres', () => {
