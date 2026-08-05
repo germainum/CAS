@@ -72,6 +72,12 @@ body {
   height: 340px;
   z-index: 0;
   pointer-events: none;
+  /* Indispensable : la vague ci-dessous dépasse volontairement de 30 % de chaque
+     côté pour pouvoir se déplacer. Sans ce clip, elle élargit le document de
+     près de deux cents pixels — `overflow-x: hidden` sur body masque le
+     débordement à la peinture, mais iOS laisse quand même déplacer la page au
+     doigt, et l'écran se décale entier. */
+  overflow: hidden;
   background:
     radial-gradient(120% 90% at 82% -30%, var(--accent-dim) 0%, transparent 68%),
     linear-gradient(var(--accent-soft), transparent 92%);
