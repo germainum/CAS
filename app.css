@@ -208,61 +208,6 @@ body {
 
 .facts b { display: block; color: var(--ink); font-size: 12.5px; font-weight: 600; }
 
-/* ---------------------------------------------------------- lieux en tuiles */
-
-.places {
-  display: flex;
-  gap: 10px;
-  overflow-x: auto;
-  margin: 0 calc(-1 * var(--gutter)) 20px;
-  padding: 2px var(--gutter) 8px;
-  scrollbar-width: none;
-  scroll-snap-type: x proximity;
-}
-
-.places::-webkit-scrollbar { display: none; }
-
-/* Tuiles carrées : nom du lieu et sa température, la sélection en violet plein. */
-.places button {
-  flex: none;
-  scroll-snap-align: center;
-  width: 92px;
-  padding: 13px 10px;
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-sm);
-  background: var(--card);
-  color: var(--ink);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.places .tile-temp {
-  display: block;
-  font-size: 19px;
-  font-weight: 700;
-  letter-spacing: -.02em;
-  font-variant-numeric: tabular-nums;
-}
-
-.places .tile-name {
-  display: block;
-  margin-top: 3px;
-  font-size: 11.5px;
-  color: var(--ink-soft);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.places button[aria-selected="true"] {
-  background: var(--accent);
-  border-color: transparent;
-  color: var(--accent-ink);
-}
-
-.places button[aria-selected="true"] .tile-name { color: var(--accent-ink); opacity: .8; }
-
 /* ---------------------------------------------------------------- cartes */
 
 .card {
@@ -275,10 +220,6 @@ body {
 }
 
 .card-title {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
   margin: 0 0 14px;
   font-size: 11.5px;
   font-weight: 600;
@@ -287,17 +228,7 @@ body {
   color: var(--ink-soft);
 }
 
-/* Précision au bout du titre : « le plus chaud vers 21 h », en minuscules. */
-.card-aside {
-  font-size: 11.5px;
-  font-weight: 500;
-  letter-spacing: .01em;
-  text-transform: none;
-  color: var(--ink-soft);
-  opacity: .85;
-  text-align: right;
-}
-
+/* Précision sous le réglage : la règle appliquée, ou son plafond. */
 .card-note {
   margin: 14px 0 0;
   font-size: 12.5px;
@@ -305,6 +236,10 @@ body {
   text-align: center;
   color: var(--ink-soft);
 }
+
+/* L'écran ne porte plus qu'une carte : elle flotte entre la lecture chiffrée et
+   le bouton, plutôt que de laisser tout le vide s'accumuler d'un seul côté. */
+.screen .card { margin: auto 0; }
 
 /* Réglage de la durée : moins, valeur, plus, centrés sur une même ligne. */
 .bath-stepper {
@@ -349,52 +284,6 @@ body {
   color: var(--ink-soft);
 }
 
-/* ------------------------------------------------------------ engagement */
-
-/* L'engagement et l'action forment un bloc, poussé en bas de l'écran par la
-   marge automatique : le vide se creuse au-dessus d'eux, pas entre les deux. */
-.check {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin: auto 0 12px;
-  padding: 16px 18px;
-  border-radius: var(--radius);
-  background: var(--card);
-  box-shadow: 0 1px 3px rgba(27, 27, 47, .05);
-  cursor: pointer;
-}
-
-.check input { position: absolute; opacity: 0; width: 0; height: 0; }
-
-.check .box {
-  flex: none;
-  width: 26px;
-  height: 26px;
-  display: grid;
-  place-items: center;
-  border: 1.5px solid var(--rule);
-  border-radius: 9px;
-  background: transparent;
-}
-
-.check .box svg {
-  width: 15px;
-  height: 15px;
-  fill: none;
-  stroke: var(--accent-ink);
-  stroke-width: 2.4;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  opacity: 0;
-}
-
-.check input:checked ~ .box { background: var(--accent); border-color: transparent; }
-.check input:checked ~ .box svg { opacity: 1; }
-.check input:focus-visible ~ .box { outline: 2px solid var(--accent); outline-offset: 2px; }
-
-.check-text { font-size: 14.5px; font-weight: 500; line-height: 1.4; }
-
 /* ---------------------------------------------------------------- action */
 
 .cta {
@@ -403,7 +292,8 @@ body {
   justify-content: center;
   gap: 10px;
   width: 100%;
-  margin: 0;
+  /* Poussé en bas de l'écran : le vide se creuse au-dessus, jamais sous lui. */
+  margin: auto 0 0;
   padding: 17px 20px;
   border: 0;
   border-radius: var(--radius);
@@ -414,14 +304,6 @@ body {
   font-weight: 600;
   cursor: pointer;
   box-shadow: 0 6px 18px rgba(123, 92, 245, .28);
-}
-
-/* Tant que l'engagement n'est pas coché, le bouton reste visiblement inerte. */
-.cta:disabled {
-  background: var(--accent-dim);
-  color: var(--ink-soft);
-  box-shadow: none;
-  cursor: not-allowed;
 }
 
 .cta-icon { width: 14px; height: 14px; fill: currentColor; }
@@ -449,54 +331,6 @@ body {
 }
 
 .micro-note a { color: inherit; }
-
-/* --------------------------------------------- quand y aller (histogramme) */
-
-/* Repris de l'histogramme d'affluence de la maquette : une barre par échéance
-   du modèle, la plus chaude en violet plein. */
-.bars {
-  display: flex;
-  align-items: flex-end;
-  gap: 10px;
-  height: 112px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.bars li {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  height: 100%;
-  justify-content: flex-end;
-}
-
-.bars .bar {
-  width: 100%;
-  min-height: 6px;
-  border-radius: 10px;
-  background: var(--accent-dim);
-}
-
-.bars li.best .bar { background: var(--accent); }
-
-.bars .bar-val {
-  font-size: 11.5px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-.bars .bar-hour {
-  font-size: 11px;
-  letter-spacing: .03em;
-  color: var(--ink-soft);
-}
-
-.bars li.best .bar-val { color: var(--accent); }
-.bars-empty { margin: 0; font-size: 13px; color: var(--ink-soft); }
 
 /* ------------------------------------------------------------ courbe 7 jours */
 

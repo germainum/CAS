@@ -12,7 +12,7 @@ import { initBath, setWaterTemperature } from './bath.js';
 import { renderLakeMap } from './lakemap.js';
 import {
   CFG, SPOTS, asArray, bestReading, isStale, mood, nextIndex, parseMeasuredStations,
-  nearestSpot, parseSeries, parseSnapshot, parseStationMeta, snapshotAge, upcomingHours,
+  nearestSpot, parseSeries, parseSnapshot, parseStationMeta, snapshotAge,
   snapshotCurrentTemps, swipeDecision, toDate, trend, urlLatestTemperature, urlModelPoint,
   urlModelSnapshot, urlStationMeta,
 } from './sources.js';
@@ -204,43 +204,6 @@ async function fetchModelSeries(spot) {
 
 /* ----------------------------------------------------------------- rendu UI */
 
-function renderSpots() {
-  $('places').replaceChildren(...SPOTS.map((spot) => {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.setAttribute('role', 'tab');
-    b.dataset.key = spot.key;
-
-    const temp = document.createElement('span');
-    temp.className = 'tile-temp';
-    const name = document.createElement('span');
-    name.className = 'tile-name';
-    name.textContent = spot.name;
-
-    b.append(temp, name);
-    b.addEventListener('click', () => selectSpot(spot));
-    return b;
-  }));
-  refreshTiles();
-}
-
-// Les tuiles portent la température de chaque lieu : le choix se fait sur la
-// valeur, pas seulement sur le nom.
-function refreshTiles() {
-  for (const b of $('places').children) {
-    b.querySelector('.tile-temp').textContent = `${formatTemp(spotTemps[b.dataset.key])}°`;
-  }
-}
-
-function markSelectedChip() {
-  refreshTiles();
-  [...$('places').children].forEach((b, i) => {
-    const selected = SPOTS[i].key === currentSpot.key;
-    b.setAttribute('aria-selected', String(selected));
-    if (selected) b.scrollIntoView({ inline: 'center', block: 'nearest' });
-  });
-}
-
 // « +0,4° » se lit d'un coup d'œil ; sous un dixième, l'écart n'est pas un signal.
 function formatTrend(delta) {
   if (delta == null || !isFinite(delta)) return '—';
@@ -269,48 +232,6 @@ function renderHero({ value, at, kind, label }) {
 
   // Le minuteur se règle sur la valeur affichée : une minute par degré.
   setWaterTemperature(value);
-}
-
-// « Quand y aller » : une barre par échéance du modèle, la plus chaude en plein.
-function renderBars(points) {
-  const box = $('bars');
-  const { slots, warmest } = upcomingHours(points, Date.now(), 6);
-
-  if (!slots.length) {
-    box.replaceChildren(Object.assign(document.createElement('p'),
-      { className: 'bars-empty', textContent: 'Prévision indisponible.' }));
-    $('barsNote').textContent = 'modèle Eawag';
-    return;
-  }
-
-  const values = slots.map((s) => s.value);
-  const lo = Math.min(...values) - 0.8;
-  const hi = Math.max(...values) + 0.2;
-
-  box.replaceChildren(...slots.map((slot) => {
-    const li = document.createElement('li');
-    if (slot.best) li.className = 'best';
-
-    const val = document.createElement('span');
-    val.className = 'bar-val';
-    val.textContent = `${formatTemp(slot.value)}°`;
-
-    const bar = document.createElement('span');
-    bar.className = 'bar';
-    // Hauteur relative à l'amplitude affichée : les écarts d'un demi-degré
-    // resteraient invisibles sur une échelle partant de zéro.
-    bar.style.height = `${(8 + ((slot.value - lo) / Math.max(0.6, hi - lo)) * 78).toFixed(1)}%`;
-
-    const hour = document.createElement('span');
-    hour.className = 'bar-hour';
-    hour.textContent = slot.at.toLocaleTimeString('fr-CH', { hour: '2-digit', minute: '2-digit' });
-
-    li.append(val, bar, hour);
-    return li;
-  }));
-
-  const quand = warmest.at.toLocaleTimeString('fr-CH', { hour: '2-digit', minute: '2-digit' });
-  $('barsNote').textContent = `le plus chaud vers ${quand}`;
 }
 
 function renderChart(points) {
@@ -376,9 +297,7 @@ const reviveSeries = (raw) => (raw || [])
 function paint(stations, series, hint = 'modèle Eawag') {
   lastSeries = series || [];
   lastHint = hint;
-  renderBars(series);
   renderChart(series);
-  refreshTiles();
   renderHero(bestReading(currentSpot, stations, series));
   $('chartHint').textContent = hint;
   drawMap();
@@ -460,7 +379,6 @@ function selectSpot(spot, direction = null) {
   if (spot.key === currentSpot.key) return;
   currentSpot = spot;
   cacheSet('spot', spot.key);
-  markSelectedChip();
   paintFromCache();
   refresh({ silent: true });
   if (direction) animateSwap(direction);
@@ -495,9 +413,8 @@ function enableSwipe() {
   let start = null;
 
   screen.addEventListener('pointerdown', (e) => {
-    // Le sélecteur de lieux défile horizontalement pour son propre compte,
-    // et les commandes gardent la priorité sur le geste.
-    if (e.target.closest('.places, button, a')) return;
+    // Les commandes gardent la priorité sur le geste.
+    if (e.target.closest('button, a')) return;
     if (!e.isPrimary) return;
     start = { x: e.clientX, y: e.clientY, at: Date.now() };
   });
@@ -614,8 +531,6 @@ function init() {
   currentSpot = SPOTS.find((s) => s.key === cacheGet('spot')) || SPOTS[0];
   spotTemps = cacheGet('spotTemps') || {};
 
-  renderSpots();
-  markSelectedChip();
   const hadCache = paintFromCache();
   // Au premier lancement sans cache, un échec total mérite d'être signalé.
   refresh({ silent: hadCache });

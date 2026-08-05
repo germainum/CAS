@@ -240,17 +240,11 @@ export function setWaterTemperature(value) {
   renderPlan();
 }
 
-// Le bouton ne s'active qu'une fois l'engagement coché — et se désactive de
-// nouveau si l'on décoche.
-function syncStart() {
-  $('bathStart').disabled = !$('alone').checked;
-}
-
 export function initBath() {
   renderPlan();
-  syncStart();
-  $('alone').addEventListener('change', syncStart);
 
+  // Le bouton mène aux consignes, jamais directement à l'eau : la règle « jamais
+  // seul » se lit là, en tête de liste, juste avant le maintien de confirmation.
   $('bathStart').addEventListener('click', openBriefing);
   $('briefCancel').addEventListener('click', close);
 
