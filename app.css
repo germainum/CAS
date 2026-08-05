@@ -469,6 +469,42 @@ body {
 .map .me-dot { fill: var(--ink); }
 .map .me-halo { fill: var(--accent-dim); stroke: var(--ink); stroke-width: 1; }
 
+/* ------------------------------------------------------------------ soutien */
+
+.support { text-align: center; }
+
+/* Pastille en filet, sur le lilas pâle : présente sans réclamer. Le violet
+   plein reste réservé au bouton de lancement. */
+.coffee {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 12px 20px;
+  border: 1px solid var(--accent-dim);
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-ink-on-soft);
+  font-size: 14.5px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.coffee svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.support .micro-note {
+  max-width: 34ch;
+  margin: 12px auto 0;
+  line-height: 1.6;
+}
+
 /* -------------------------------------------------------------- pied de page */
 
 .foot { margin-top: 34px; }

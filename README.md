@@ -101,6 +101,11 @@ Deux détails d'implémentation qui comptent :
 Le signal sonore ne peut pas retentir si l'app est en arrière-plan — iOS y suspend
 l'audio. L'écran le rappelle plutôt que de le taire.
 
+Un bouton **« Achète-moi un café »** en bas de page mène à
+[paypal.me/germainlot](https://paypal.me/germainlot). En filet sur fond lilas, et
+non en violet plein : la seule action pleine de l'écran reste le lancement du
+bain.
+
 Les règles affichées viennent de la SSS, 24 heures, 20 minutes et la WTA, citées
 dans l'app. Elles ne remplacent pas un avis médical.
 
