@@ -212,14 +212,37 @@ function formatTrend(delta) {
   return `${signe}${Math.abs(delta).toFixed(1).replace('.', ',')}°`;
 }
 
+// Le sélecteur porte les dix lieux, dans l'ordre du lac. Construit une fois :
+// SPOTS ne bouge pas en cours de route.
+function renderPicker() {
+  const select = $('spot');
+  select.replaceChildren(...SPOTS.map((spot) => {
+    const opt = document.createElement('option');
+    opt.value = spot.key;
+    opt.textContent = spot.name;
+    return opt;
+  }));
+  select.addEventListener('change', () => {
+    const spot = SPOTS.find((s) => s.key === select.value);
+    if (spot) selectSpot(spot);
+  });
+}
+
+// Le lieu peut aussi changer par la carte, le balayage ou la géolocalisation :
+// le sélecteur suit, sinon il annoncerait un autre endroit que la température.
+function syncPicker() {
+  $('spot').value = currentSpot.key;
+  $('spotDistance').textContent = located?.key === currentSpot.key
+    ? `à ${formatKm(located.km)} km de vous`
+    : '';
+}
+
 function renderHero({ value, at, kind, label }) {
   // La couleur du fond suit la température : elle informe avant le chiffre.
   document.body.dataset.band = mood(value).band;
   $('value').textContent = formatTemp(value);
 
-  $('readoutPlace').textContent = located?.key === currentSpot.key
-    ? `${currentSpot.name} · à ${formatKm(located.km)} km`
-    : currentSpot.name;
+  syncPicker();
   // Le détail de la source vit dans les trois repères ci-dessous ; cette ligne
   // ne parle que lorsqu'il n'y a rien à afficher.
   $('readoutSource').textContent = value == null ? label : '';
@@ -379,6 +402,9 @@ function selectSpot(spot, direction = null) {
   if (spot.key === currentSpot.key) return;
   currentSpot = spot;
   cacheSet('spot', spot.key);
+  // Avant le rendu : sans cache à peindre, `renderHero` n'est pas encore appelé
+  // et le sélecteur afficherait le lieu précédent.
+  syncPicker();
   paintFromCache();
   refresh({ silent: true });
   if (direction) animateSwap(direction);
@@ -388,7 +414,7 @@ function selectSpot(spot, direction = null) {
 // un balayage ne se distingue pas d'un rafraîchissement.
 function animateSwap(direction) {
   const cls = direction === 'next' ? 'enter-next' : 'enter-prev';
-  for (const el of document.querySelectorAll('.eyebrow, .readout')) {
+  for (const el of document.querySelectorAll('.whereat, .readout')) {
     el.classList.remove('enter-next', 'enter-prev');
     // Forcer un recalcul relance l'animation même sur deux balayages successifs.
     void el.offsetWidth;
@@ -530,6 +556,9 @@ function maybeShowInstallHint() {
 function init() {
   currentSpot = SPOTS.find((s) => s.key === cacheGet('spot')) || SPOTS[0];
   spotTemps = cacheGet('spotTemps') || {};
+
+  renderPicker();
+  syncPicker();
 
   const hadCache = paintFromCache();
   // Au premier lancement sans cache, un échec total mérite d'être signalé.

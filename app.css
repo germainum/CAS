@@ -16,6 +16,8 @@
   --accent: #7b5cf5;
   --accent-ink: #ffffff;
   --accent-soft: #ece7fe;
+  /* Violet assombri : l'accent lui-même manque de contraste sur le lilas pâle. */
+  --accent-ink-on-soft: #4a2fd0;
   --accent-dim: rgba(123, 92, 245, .16);
 
   --gutter: 20px;
@@ -33,6 +35,7 @@
     --accent: #a48cff;
     --accent-ink: #17122b;
     --accent-soft: #272041;
+    --accent-ink-on-soft: #cfc2ff;
     --accent-dim: rgba(164, 140, 255, .22);
   }
 }
@@ -133,13 +136,65 @@ body {
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .ghost.busy svg { animation: none; } }
 
-.eyebrow {
-  margin: 26px 0 0;
-  font-size: 11.5px;
+/* ------------------------------------------------------------ où je me baigne */
+
+.whereat {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 24px 0 0;
+  font-size: 15px;
+  color: var(--ink-soft);
+}
+
+.whereat label { flex: none; }
+
+.whereat-far {
+  flex: none;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  opacity: .8;
+}
+
+/* Pastille violette autour du <select> : le menu reste natif — la roue d'iOS —
+   et seule son enveloppe est dessinée. */
+.pick {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: var(--accent-soft);
+}
+
+.pick select {
+  /* 16 px au moins : en dessous, iOS zoome sur le champ à l'ouverture. */
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 8px 30px 8px 15px;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  color: var(--accent-ink-on-soft);
+  font: inherit;
+  font-size: 16px;
   font-weight: 600;
-  letter-spacing: .13em;
-  text-transform: uppercase;
-  color: var(--accent);
+  cursor: pointer;
+}
+
+.pick select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.pick svg {
+  position: absolute;
+  right: 12px;
+  width: 12px;
+  height: 13px;
+  fill: none;
+  stroke: var(--accent-ink-on-soft);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
 }
 
 /* ---------------------------------------------------------- température */

@@ -44,7 +44,16 @@
       </div>
     </header>
 
-    <p class="eyebrow">Bain froid · <span id="readoutPlace">—</span></p>
+    <!-- Choix du lieu : un vrai <select>, donc la roue native d'iOS — plus sûre
+         au pouce qu'une liste maison, et lisible par VoiceOver sans effort. -->
+    <p class="whereat">
+      <label for="spot">Je me baigne à</label>
+      <span class="pick">
+        <select id="spot" aria-label="Lieu de baignade"></select>
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6.5 8 10.5l4-4"/></svg>
+      </span>
+      <span class="whereat-far" id="spotDistance"></span>
+    </p>
 
     <div class="readout" aria-live="polite">
       <p class="readout-value"><span id="value">--</span><span class="degree">°</span></p>
