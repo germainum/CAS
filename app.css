@@ -23,9 +23,12 @@
   --gutter: 20px;
   --radius: 22px;
   --radius-sm: 16px;
-  /* Hauteur du bandeau d'action fixe (bouton + ses marges) : sert à réserver la
-     place en bas de page, plutôt que de deviner à chaque endroit qui en a besoin. */
-  --dock-h: 82px;
+  /* Hauteur du bandeau d'action fixe, encoche comprise : sert à réserver la
+     place en bas de page, plutôt que de deviner à chaque endroit qui en a
+     besoin. Valeur de repli seulement — `app.js` la mesure et la corrige, car
+     elle change avec l'encoche, l'invite d'installation et un libellé qui
+     passerait à la ligne. */
+  --dock-h: 90px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -80,9 +83,10 @@ body {
   max-width: 620px;
   margin: 0 auto;
   /* Le bandeau d'action est fixe et flotte par-dessus : sans cette réserve,
-     il couvrirait le pied de page plutôt que de simplement le surplomber. */
+     il couvrirait le pied de page plutôt que de simplement le surplomber.
+     `--dock-h` inclut déjà l'encoche du bas, mesurée avec le bandeau. */
   padding: 0 calc(env(safe-area-inset-right) + var(--gutter))
-           calc(env(safe-area-inset-bottom) + var(--dock-h) + 20px)
+           calc(var(--dock-h) + 20px)
            calc(env(safe-area-inset-left) + var(--gutter));
 }
 
@@ -505,6 +509,39 @@ body {
   line-height: 1.6;
 }
 
+/* Troisième niveau d'insistance : contour seul. Le violet plein est au bouton de
+   lancement, le lilas au café, et ce contour à ce qui ne concerne qu'une partie
+   des visiteurs. */
+.commission {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 22px;
+  padding: 13px 20px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--card);
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: left;
+  text-decoration: none;
+}
+
+.commission svg {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.commission span { color: var(--ink-soft); }
+.commission b { display: block; color: var(--accent-ink-on-soft); font-weight: 600; }
+
 /* -------------------------------------------------------------- pied de page */
 
 .foot { margin-top: 34px; }
@@ -759,28 +796,32 @@ body.timing { overflow: hidden; }
   cursor: pointer;
 }
 
+/* Dans le bandeau, juste au-dessus du bouton : c'est le conteneur qui garantit
+   qu'ils ne se recouvrent pas, et sa hauteur mesurée qui protège le pied de page. */
 .install {
-  position: fixed;
-  left: 12px;
-  right: 12px;
-  bottom: calc(env(safe-area-inset-bottom) + 12px);
-  max-width: 596px;
-  margin: 0 auto;
-  padding: 16px;
+  max-width: 620px;
+  margin: 0 auto 10px;
+  padding: 14px 16px;
   border-radius: var(--radius);
   background: var(--card);
   text-align: center;
   font-size: 14px;
-  box-shadow: 0 10px 30px rgba(27, 27, 47, .16);
+  line-height: 1.45;
+  box-shadow: 0 6px 20px rgba(27, 27, 47, .14);
+  pointer-events: auto;
 }
 
-.install p { margin: 0 0 6px; }
+.install[hidden] { display: none; }
+.install p { margin: 0 0 4px; }
 
 .toast {
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
-  bottom: calc(env(safe-area-inset-bottom) + 116px);
+  /* Au-dessus du bandeau, invite d'installation comprise puisque `--dock-h` la
+     mesure : sinon le message passait derrière. */
+  bottom: calc(var(--dock-h) + 16px);
+  z-index: 6;
   max-width: calc(100% - 44px);
   padding: 11px 18px;
   border-radius: 999px;

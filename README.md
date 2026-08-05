@@ -101,10 +101,30 @@ Deux détails d'implémentation qui comptent :
 Le signal sonore ne peut pas retentir si l'app est en arrière-plan — iOS y suspend
 l'audio. L'écran le rappelle plutôt que de le taire.
 
-Un bouton **« Achète-moi un café »** en bas de page mène à
-[paypal.me/germainlot](https://paypal.me/germainlot). En filet sur fond lilas, et
-non en violet plein : la seule action pleine de l'écran reste le lancement du
-bain.
+## Soutien et contact
+
+Deux liens en bas de page, à des niveaux d'insistance distincts du bouton de
+lancement — qui garde seul le violet plein :
+
+- **« Offre-moi un café »**, pastille lilas, vers
+  [paypal.me/germainlot](https://paypal.me/germainlot) ;
+- **« Contactez-moi sur WhatsApp »**, contour seul, pour une demande de création
+  d'application. Le message est prérempli. Le libellé nomme WhatsApp : une
+  destination inattendue au toucher se paie en confiance.
+
+## Le bandeau d'action fixe
+
+Le bouton de lancement vit dans un bandeau `position: fixed`, et **l'invite
+d'installation iOS vit dedans**, empilée au-dessus de lui. C'est le résultat
+d'un bug : les deux étaient fixés au même bord indépendamment, chacun ignorant
+la hauteur de l'autre, et le texte de l'invite passait sous le bouton.
+
+La hauteur du bandeau est ensuite **mesurée** par `trackDockHeight()`
+(`app.js`), qui écrit `--dock-h` sur `:root` via un `ResizeObserver`. La page
+s'en sert pour réserver la place en bas — `.app`, `.screen` et le message
+transitoire. Une valeur en dur ne pouvait pas tenir : l'invite apparaît puis
+disparaît, l'encoche varie d'un appareil à l'autre, et un libellé peut passer à
+la ligne.
 
 Les règles affichées viennent de la SSS, 24 heures, 20 minutes et la WTA, citées
 dans l'app. Elles ne remplacent pas un avis médical.

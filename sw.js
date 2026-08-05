@@ -3,7 +3,7 @@
 // modèle. Les API externes passent directement par le réseau, et leurs données
 // sont mises en cache côté application (localStorage), avec leur horodatage.
 
-const CACHE = 'leman-shell-v10';
+const CACHE = 'leman-shell-v11';
 
 const SHELL = [
   './',

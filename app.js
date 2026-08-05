@@ -539,6 +539,22 @@ async function locateIfAllowed() {
 
 /* ------------------------------------------------------ iOS & cycle de vie */
 
+// Le bandeau d'action est fixe : la page doit réserver sa hauteur en bas, sinon
+// il recouvre le pied de page. Cette hauteur n'est pas une constante — l'invite
+// d'installation s'y ajoute puis disparaît, l'encoche varie d'un appareil à
+// l'autre, et un libellé peut passer à la ligne. La mesurer évite d'entretenir
+// une valeur en dur qui finit toujours par mentir.
+function trackDockHeight() {
+  const dock = document.querySelector('.cta-dock');
+  const apply = () => {
+    const h = Math.ceil(dock.getBoundingClientRect().height);
+    if (h > 0) document.documentElement.style.setProperty('--dock-h', `${h}px`);
+  };
+  apply();
+  if ('ResizeObserver' in window) new ResizeObserver(apply).observe(dock);
+  else window.addEventListener('resize', apply);
+}
+
 function maybeShowInstallHint() {
   const standalone = window.navigator.standalone === true
     || window.matchMedia('(display-mode: standalone)').matches;
@@ -578,6 +594,8 @@ function init() {
   initBath();
   locateIfAllowed();
   maybeShowInstallHint();
+  // Après l'invite : sa présence change la hauteur à réserver.
+  trackDockHeight();
 
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js')
