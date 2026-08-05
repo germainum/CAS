@@ -10,7 +10,8 @@
     "check": "node tools/check-sources.mjs",
     "icons": "python3 tools/make-icons.py",
     "og": "python3 tools/make-og-image.py",
-    "serve": "python3 -m http.server 4173"
+    "serve": "python3 -m http.server 4173",
+    "seo": "node tools/prerender-seo.mjs"
   },
   "license": "MIT"
 }

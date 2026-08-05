@@ -346,11 +346,26 @@ const reviveSeries = (raw) => (raw || [])
   .map((p) => ({ at: new Date(p.at), value: p.value }))
   .filter((p) => !isNaN(p.at.getTime()) && isFinite(p.value));
 
+// La liste rédigée en bas de page est préremplie par la CI, pour qu'un robot
+// d'indexation y trouve des valeurs. Elle se remet à jour ici, sinon un visiteur
+// verrait le texte annoncer une chose et l'app une autre.
+function renderTempsList() {
+  const rows = document.querySelectorAll('#tempsList li');
+  if (!rows.length) return;
+  rows.forEach((li, i) => {
+    const spot = SPOTS[i];
+    if (!spot) return;
+    const v = spotTemps[spot.key];
+    li.querySelector('b').textContent = isFinite(v) ? `${formatTemp(v)} °C` : '—';
+  });
+}
+
 function paint(stations, series, hint = 'modèle Eawag') {
   lastSeries = series || [];
   lastHint = hint;
   renderChart(series);
   renderHero(bestReading(currentSpot, stations, series));
+  renderTempsList();
   $('chartHint').textContent = hint;
   drawMap();
 }

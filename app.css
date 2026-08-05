@@ -520,6 +520,113 @@ body {
 .map .me-dot { fill: var(--ink); }
 .map .me-halo { fill: var(--accent-dim); stroke: var(--ink); stroke-width: 1; }
 
+/* ---------------------------------------------------------- contenu rédigé */
+
+/* Sous l'app, pas dedans : l'écran de préparation reste nu, et le texte qui
+   rend le site trouvable vit plus bas, pour qui descend. */
+.prose { max-width: 40rem; }
+
+.prose h1 {
+  margin: 0 0 18px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -.02em;
+}
+
+.prose h2 {
+  margin: 34px 0 14px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -.01em;
+}
+
+.prose p {
+  margin: 0 0 14px;
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: var(--ink-soft);
+}
+
+.prose p b, .prose dd b { color: var(--ink); font-weight: 600; }
+.prose a { color: var(--accent-ink-on-soft); }
+
+/* Les dix lieux et leur température : la même donnée que la carte, en texte —
+   donc lisible par un robot, un lecteur d'écran et un œil pressé. */
+.temps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 2px 18px;
+  margin: 0 0 10px;
+  padding: 16px 18px;
+  border-radius: var(--radius);
+  background: var(--card);
+  list-style: none;
+}
+
+.temps li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 0;
+  font-size: 14px;
+}
+
+.temps li + li { border-top: 1px solid var(--rule); }
+.temps span { color: var(--ink-soft); }
+.temps b { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.temps-stamp {
+  margin: 0 0 20px;
+  font-size: 11.5px;
+  letter-spacing: .02em;
+  color: var(--ink-soft);
+}
+
+/* Quatre exemples de durée : plus parlant qu'une règle énoncée seule. */
+.duree-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 18px;
+  padding: 0;
+  list-style: none;
+}
+
+.duree-list li {
+  flex: 1 1 128px;
+  padding: 13px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+}
+
+.duree-list b {
+  display: block;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--accent-ink-on-soft);
+}
+
+.duree-list span { font-size: 12px; line-height: 1.4; color: var(--ink-soft); }
+
+.faq { margin: 0; }
+
+.faq dt {
+  margin: 20px 0 6px;
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.faq dd {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--ink-soft);
+}
+
 /* ------------------------------------------------------------------ soutien */
 
 .support { text-align: center; }
