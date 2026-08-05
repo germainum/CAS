@@ -8,7 +8,6 @@ import {
   BATH_MAX_MINUTES, CFG, LAKE_OUTLINE, SPOTS, asArray, bathPhase, bathPlan, bestReading,
   breathCue, distanceKm, nearestSpot, pointInPolygon, projectPoints, snapshotCurrentTemps,
   trend,
-  upcomingHours,
   formatClock, isStale, mood, nextIndex, parseMeasuredStations, swipeDecision,
   parseSeries, parseSnapshot, parseStationMeta, snapshotAge, stampUTC, toDate, urlModelPoint,
 } from '../sources.js';
@@ -535,41 +534,9 @@ test('snapshotCurrentTemps prend, pour chaque lieu, le point le plus proche de m
   assert.ok(!('vide' in temps), 'un lieu sans point ne doit pas apparaître');
 });
 
-console.log('\nquand y aller');
-
 const serie = (offsetsH, vals) => offsetsH.map((h, i) => ({
   at: new Date(NOW + h * 3600 * 1000), value: vals[i],
 }));
-
-test('seules les échéances à venir sont retenues', () => {
-  const { slots } = upcomingHours(serie([-6, -3, 0, 3, 6], [18, 19, 20, 21, 22]), NOW, 6);
-  assert.deepEqual(slots.map((s) => s.value), [20, 21, 22]);
-});
-
-test('la plus chaude est désignée, et une seule', () => {
-  const { slots, warmest } = upcomingHours(serie([0, 3, 6, 9], [19, 22, 21, 20]), NOW, 6);
-  assert.equal(warmest.value, 22);
-  assert.deepEqual(slots.map((s) => s.best), [false, true, false, false]);
-});
-
-test('le nombre d’échéances est plafonné', () => {
-  const { slots } = upcomingHours(serie([0, 3, 6, 9, 12, 15, 18], [1, 2, 3, 4, 5, 6, 7]), NOW, 4);
-  assert.equal(slots.length, 4);
-});
-
-test('une échéance juste passée reste affichée', () => {
-  // Le pas du modèle est de trois heures : rejeter le point courant laisserait
-  // un trou de trois heures au moment le plus utile.
-  const { slots } = upcomingHours(serie([-0.25], [20]), NOW, 6);
-  assert.equal(slots.length, 1);
-});
-
-test('sans série, rien n’est inventé', () => {
-  assert.deepEqual(upcomingHours([], NOW).slots, []);
-  assert.equal(upcomingHours([], NOW).warmest, null);
-  assert.deepEqual(upcomingHours(null, NOW).slots, []);
-  assert.deepEqual(upcomingHours(serie([-9, -6], [18, 19]), NOW).slots, [], 'tout est passé');
-});
 
 console.log('\ntendance sur 24 h');
 

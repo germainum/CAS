@@ -22,8 +22,8 @@ rafraîchir.
 
 ## Ce qu'affiche l'app
 
-L'écran d'accueil est un écran de préparation : il tient en une hauteur d'écran et
-se lit de haut en bas, du constat au geste.
+L'écran d'accueil est un écran de préparation, tenu à quatre éléments : rien à
+lire, une décision à prendre.
 
 - la **température de l'eau** au lieu courant, en très gros — c'est la seule
   information dont dépend tout le reste ; elle est estompée au-delà de six heures ;
@@ -31,29 +31,20 @@ se lit de haut en bas, du constat au geste.
   l'**âge du relevé**, et la **source** — nom de la station officielle, ou `Eawag`
   pour la simulation. Aucun de ces trois ne répète le chiffre : ils disent d'où il
   vient et s'il bouge ;
-- la **durée conseillée**, réglable, qui découle de la température ;
-- les **dix lieux en tuiles**, chacune portant sa propre température : le choix se
-  fait sur la valeur, pas seulement sur le nom ;
-- **« Quand y aller »** : une barre par échéance du modèle sur les dix-huit heures
-  qui viennent, la plus chaude en violet plein. L'échelle est resserrée sur
-  l'amplitude affichée, faute de quoi un écart d'un demi-degré serait invisible ;
-- un **engagement à cocher** : « je ne suis pas seul ». Le bouton de lancement
-  reste inerte tant qu'il ne l'est pas ;
-- le **lieu le plus proche de vous** est sélectionné d'emblée si la localisation
-  est autorisée, avec la distance affichée.
+- la **durée de mon bain froid**, réglable, qui découle de la température ;
+- le **bouton de lancement**, poussé en bas de l'écran par une marge automatique.
 
-L'engagement et le bouton sont poussés en bas de l'écran par une marge
-automatique : le vide éventuel se creuse au-dessus d'eux, pas entre les deux.
+Le **lieu le plus proche de vous** est sélectionné d'emblée si la localisation est
+autorisée, avec la distance affichée.
 
 En dessous : une **carte du lac** portant la température des dix lieux,
 comparables entre elles car toutes issues du modèle, et une **courbe sur sept
 jours** — cinq écoulés en trait plein, deux de prévision en pointillé.
 
-Dix lieux sont proposés, des Pâquis au Bouveret. On passe de l'un à l'autre par
-les tuiles, par un **point de la carte**, par **balayage horizontal** sur le premier
-écran, ou par les flèches du clavier. Le balayage cède la place au défilement dès que le geste
-est vertical, et ne se déclenche pas depuis les tuiles, qui défilent pour leur
-propre compte. Aux extrémités, il s'arrête plutôt que de boucler.
+Dix lieux sont proposés, des Pâquis au Bouveret. On passe de l'un à l'autre par un
+**point de la carte**, par **balayage horizontal** sur le premier écran, ou par les
+flèches du clavier. Le balayage cède la place au défilement dès que le geste est
+vertical. Aux extrémités, il s'arrête plutôt que de boucler.
 
 Pour ajouter un lieu, complétez la constante `SPOTS` dans `sources.js` : le point
 doit se situer **sur l'eau**, sinon la simulation ne renvoie rien.
@@ -75,6 +66,10 @@ essentielles, puis un **maintien d'une seconde** sur un bouton circulaire dont
 l'anneau se remplit. Ce n'est pas une coquetterie : cette seconde impose une
 lecture des consignes juste avant d'entrer dans l'eau, et rend impossible un
 lancement par mégarde. Relâcher trop tôt n'enclenche rien et le dit.
+
+C'est là, et nulle part ailleurs, que se lisent les six consignes de sécurité —
+« quelqu'un vous accompagne et vous voit » en tête. L'écran d'accueil ne les
+répète pas : elles n'ont d'utilité qu'au moment d'entrer dans l'eau.
 
 Pendant l'immersion, le minuteur passe par trois temps, dont les seuils suivent la
 durée totale : entrée dans l'eau (respiration), régime stable (rester près du
@@ -117,8 +112,8 @@ navigation.
 Toucher la carte sélectionne le lieu **le plus proche du doigt**, sur une seule
 zone sensible couvrant le dessin. Une cible par lieu semblait plus naturelle, mais
 au Haut-Lac, Montreux et Le Bouveret ne sont qu'à quatre kilomètres : des cibles
-confortables s'y recouvraient et l'une des deux devenait inatteignable. Les tuiles
-restent la commande accessible — la carte est un raccourci au doigt.
+confortables s'y recouvraient et l'une des deux devenait inatteignable. Au clavier,
+les flèches font le même travail.
 
 Un test vérifie que **les dix lieux tombent dans l'eau**, et il travaille : il a
 d'abord pris Genève et Nyon en défaut sur un contour dessiné à la main, puis
@@ -173,7 +168,7 @@ utile depuis l'iPhone lui-même, il liste les appels réussis ou échoués.
 | `sw.js` | service worker : réseau d'abord, cache en secours |
 | `manifest.webmanifest` | nom, icônes, mode plein écran |
 | `tools/build-model-data.mjs` | précalcul de `data/model.json` dans la CI |
-| `tools/test-parsers.mjs` | 86 tests sur `sources.js` |
+| `tools/test-parsers.mjs` | 81 tests sur `sources.js` |
 | `tools/check-sources.mjs` | vérification des API en conditions réelles |
 | `tools/make-icons.py` | génération des icônes PNG |
 
