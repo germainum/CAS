@@ -29,10 +29,14 @@ lire, une décision à prendre.
 
 - la **température de l'eau** au lieu courant, en très gros — c'est la seule
   information dont dépend tout le reste ; elle est estompée au-delà de six heures ;
-- trois **repères** sous le chiffre : la **tendance sur 24 h** (`+0,4°`, `stable`),
-  l'**âge du relevé**, et la **source** — nom de la station officielle, ou `Eawag`
-  pour la simulation. Aucun de ces trois ne répète le chiffre : ils disent d'où il
-  vient et s'il bouge ;
+- une **phrase du jour** sous le chiffre : ce que l'app dit de l'eau, plutôt que
+  ce qu'elle mesure. Elle suit la température et la date — même formule toute la
+  journée, une autre demain. Le ton reste posé : jamais une performance à
+  accomplir ;
+- trois **repères** : la **tendance sur 24 h** (`+0,4°`, `stable`), l'âge du
+  chiffre avec sa nature (**mesuré** ou **simulé** — « relevé » ne disait pas d'où
+  il venait), et la **source** — nom de la station officielle, ou `Eawag`.
+  Aucun des trois ne répète le chiffre : ils disent d'où il vient et s'il bouge ;
 - **mon temps de présence**, réglable, qui découle de la température ;
 - le **bouton de lancement** — « Je me jette à l'eau ». Il vit dans un bandeau
   fixe, toujours visible, y compris en parcourant la carte ou la courbe plus bas :
@@ -40,7 +44,9 @@ lire, une décision à prendre.
   prudence pour l'éviter par mégarde.
 
 Le **lieu le plus proche de vous** est sélectionné d'emblée si la localisation est
-autorisée, avec la distance affichée.
+autorisée, avec la distance affichée. À la première ouverture, le chiffre monte
+jusqu'à sa valeur et une vague traverse le bandeau — une fois, sans boucler : un
+mouvement perpétuel derrière une valeur qu'on vient lire finirait par gêner.
 
 En dessous : une **carte du lac** portant la température des dix lieux,
 comparables entre elles car toutes issues du modèle, et une **courbe sur sept
@@ -89,6 +95,35 @@ Pendant l'immersion, le minuteur passe par trois temps, dont les seuils suivent 
 durée totale : entrée dans l'eau (respiration), régime stable (rester près du
 bord), puis préparation de la sortie. À l'échéance, il compte le dépassement
 plutôt que de s'arrêter en silence.
+
+**L'écran change de nature** dès le lancement : fond profond, texte clair. On ne
+lit plus une donnée, on traverse un moment — et un fond sombre se regarde mieux
+les yeux pleins d'eau. Les jetons de couleur sont redéfinis sur le conteneur du
+minuteur, ce qui teinte d'un coup tout ce qu'il contient.
+
+Une **vibration** marque le départ, chaque minute entière, et l'échéance.
+Attention : **iOS n'expose pas `navigator.vibrate`** — sur iPhone, le code se
+tait et le repère reste sonore. Il fonctionne sur Android. Rien dans l'interface
+ne promet une vibration, faute de pouvoir la tenir partout.
+
+### Après la sortie
+
+« Je sors » ne referme pas l'écran, il ouvre le bilan : « Voilà. », la durée
+tenue, la température de l'eau, et deux gestes — **« J'y étais »**, qui inscrit
+l'immersion au journal local, et un **partage** natif (`navigator.share`, absent
+du bouton si le navigateur ne l'a pas).
+
+Rien n'est enregistré avant ce geste : un bain interrompu au bout de dix secondes
+n'a pas à figurer dans une série. Le journal vit dans `localStorage`, cent
+entrées au plus, sans compte ni serveur.
+
+`bathStats()` en tire une **série de jours consécutifs**, la température la plus
+froide affrontée et les minutes de la semaine. Deux décisions valent d'être
+connues : s'être baigné **hier** suffit à maintenir la série (sans quoi elle
+tomberait à zéro chaque matin avant le bain), et une série interrompue
+avant-hier vaut zéro (sans quoi le compteur resterait figé sur un exploit
+ancien). `statsPhrase()` la formule en habitude — « 5 jours que tu réponds
+présent » — et non en score à défendre.
 
 Deux détails d'implémentation qui comptent :
 
@@ -259,7 +294,7 @@ utile depuis l'iPhone lui-même, il liste les appels réussis ou échoués.
 | `robots.txt`, `sitemap.xml` | référencement : autorisation et URL canonique |
 | `og-image.png` | vignette de partage, 1200 × 630 |
 | `tools/build-model-data.mjs` | précalcul de `data/model.json` dans la CI |
-| `tools/test-parsers.mjs` | 86 tests sur `sources.js` |
+| `tools/test-parsers.mjs` | 99 tests sur `sources.js` |
 | `tools/check-sources.mjs` | vérification des API en conditions réelles |
 | `tools/make-icons.py` | génération des icônes PNG |
 | `tools/make-og-image.py` | génération de la vignette de partage |

@@ -8,10 +8,10 @@
 // Toute réponse utile est mise en cache (localStorage) : l'app affiche donc
 // toujours quelque chose, hors ligne compris, en signalant l'âge de la donnée.
 
-import { initBath, setWaterTemperature } from './bath.js';
+import { initBath, setBathPlace, setWaterTemperature } from './bath.js';
 import { renderLakeMap } from './lakemap.js';
 import {
-  CFG, SPOTS, asArray, bestReading, isStale, mood, nextIndex, parseMeasuredStations,
+  CFG, SPOTS, asArray, bestReading, greeting, isStale, mood, nextIndex, parseMeasuredStations,
   nearestSpot, parseSeries, parseSnapshot, parseStationMeta, snapshotAge,
   snapshotCurrentTemps, swipeDecision, toDate, trend, urlLatestTemperature, urlModelPoint,
   urlModelSnapshot, urlStationMeta,
@@ -237,24 +237,53 @@ function syncPicker() {
     : '';
 }
 
+// Le chiffre monte jusqu'à sa valeur à la première ouverture. Uniquement là :
+// répété à chaque rafraîchissement, le mouvement deviendrait une nuisance, et
+// un balayage entre deux lieux doit changer la valeur, pas la rejouer.
+let counted = false;
+
+function showValue(value) {
+  const el = $('value');
+  if (value == null || !isFinite(value)) { el.textContent = formatTemp(value); return; }
+  const skip = counted || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  counted = true;
+  if (skip) { el.textContent = formatTemp(value); return; }
+
+  const from = performance.now();
+  const DUR = 900;
+  const step = (now) => {
+    const p = Math.min(1, (now - from) / DUR);
+    // Décélération : la fin de la montée doit être lisible, pas brutale.
+    el.textContent = formatTemp(value * (1 - (1 - p) ** 3));
+    if (p < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
 function renderHero({ value, at, kind, label }) {
   // La couleur du fond suit la température : elle informe avant le chiffre.
   document.body.dataset.band = mood(value).band;
-  $('value').textContent = formatTemp(value);
+  showValue(value);
 
   syncPicker();
   // Le détail de la source vit dans les trois repères ci-dessous ; cette ligne
   // ne parle que lorsqu'il n'y a rien à afficher.
   $('readoutSource').textContent = value == null ? label : '';
 
+  $('greeting').textContent = greeting(value);
+
   $('factTrend').textContent = formatTrend(trend(lastSeries, Date.now()));
   $('factAge').textContent = formatAge(at).replace(/^il y a /, '') || '—';
+  // « relevé » ne disait pas d'où venait le chiffre. « mesuré » ou « simulé »
+  // répond, et l'âge juste au-dessus devient concret.
+  $('factAgeLabel').textContent = kind === 'measured' ? 'mesuré' : 'simulé';
   $('factSource').textContent = sourceHead(label);
 
   document.querySelector('.readout').classList.toggle('stale', value != null && isStale(at));
 
   // Le minuteur se règle sur la valeur affichée : une minute par degré.
   setWaterTemperature(value);
+  setBathPlace(currentSpot.name);
 }
 
 function renderChart(points) {

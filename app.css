@@ -77,6 +77,38 @@ body {
     linear-gradient(var(--accent-soft), transparent 92%);
 }
 
+/* Une vague qui traverse le bandeau une fois, à l'ouverture. Elle ne boucle pas :
+   un mouvement perpétuel derrière une valeur qu'on vient lire finirait par gêner. */
+.wash::after {
+  content: '';
+  position: absolute;
+  left: -30%;
+  right: -30%;
+  top: 96px;
+  height: 200px;
+  opacity: 0;
+  /* Les dégradés s'éteignent avant les bords de la boîte. À 100 % d'extension
+     ils y arrivaient encore visibles, et la vague se terminait sur un trait net. */
+  background:
+    radial-gradient(52% 52% at 22% 50%, rgba(255, 255, 255, .5) 0%, transparent 72%),
+    radial-gradient(44% 48% at 70% 46%, var(--accent-dim) 0%, transparent 74%);
+  animation: swell 2.6s cubic-bezier(.25, .6, .3, 1) 120ms 1 both;
+}
+
+@keyframes swell {
+  0%   { opacity: 0;   transform: translateX(-14%) skewY(-1.6deg); }
+  40%  { opacity: .85; }
+  100% { opacity: 0;   transform: translateX(12%) skewY(1.2deg); }
+}
+
+@media (prefers-color-scheme: dark) {
+  .wash::after { mix-blend-mode: screen; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wash::after { animation: none; display: none; }
+}
+
 .app {
   position: relative;
   z-index: 1;
@@ -206,6 +238,15 @@ body {
   stroke-linecap: round;
   stroke-linejoin: round;
   pointer-events: none;
+}
+
+/* Ce que l'app dit du jour : entre le chiffre et les repères, en retrait. */
+.greeting {
+  max-width: 30ch;
+  margin: 0 0 20px;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--ink-soft);
 }
 
 /* ---------------------------------------------------------- température */
@@ -578,10 +619,36 @@ body {
 }
 
 .timer[hidden] { display: none; }
-.timer[data-state="briefing"] .timer-inner,
-.timer[data-state="running"] .brief { display: none; }
 
-.brief, .timer-inner { width: 100%; max-width: 420px; }
+/* Un seul des trois panneaux à la fois : consignes, immersion, bilan. */
+.timer .brief, .timer .timer-inner, .timer .after { display: none; }
+.timer[data-state="briefing"] .brief,
+.timer[data-state="running"] .timer-inner,
+.timer[data-state="after"] .after { display: block; }
+
+/* Pendant l'immersion, l'écran change de nature : fond profond, texte clair.
+   On ne lit plus une donnée, on traverse un moment — et un fond sombre se
+   regarde mieux les yeux pleins d'eau, à l'aube comme au crépuscule. */
+.timer[data-state="running"],
+.timer[data-state="after"] {
+  --ink: #f4f2ff;
+  --ink-soft: rgba(244, 242, 255, .62);
+  --rule: rgba(244, 242, 255, .16);
+  --card: rgba(255, 255, 255, .07);
+  --accent: #b9a5ff;
+  --accent-ink: #1b1436;
+  --accent-dim: rgba(185, 165, 255, .22);
+  color: var(--ink);
+  background: #171233;
+  background-image:
+    radial-gradient(120% 80% at 50% -10%, #3a2a72 0%, transparent 72%),
+    radial-gradient(90% 70% at 10% 110%, #14324d 0%, transparent 70%);
+}
+
+.timer[data-state="running"] .timer-warn,
+.timer[data-state="after"] .after-facts { background: var(--card); }
+
+.brief, .timer-inner, .after { width: 100%; max-width: 420px; }
 
 .timer-phase {
   margin: 0;
@@ -781,6 +848,80 @@ body {
 }
 
 .timer-actions .cta { max-width: 260px; margin: 0; }
+
+/* ------------------------------------------------------------ après le bain */
+
+.after-word {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+  font-size: clamp(2.8rem, 15vw, 4rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -.04em;
+}
+
+.after-line {
+  margin: 12px auto 30px;
+  max-width: 26ch;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.after-facts {
+  display: flex;
+  gap: 10px;
+  margin: 0 0 20px;
+  padding: 18px 10px;
+  border-radius: var(--radius);
+}
+
+.after-facts p {
+  flex: 1;
+  margin: 0;
+}
+
+.after-facts b {
+  display: block;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+  font-size: 2.1rem;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.after-facts span {
+  font-size: 11px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+/* Le bilan de régularité : une phrase, jamais un tableau de bord. */
+.after-stats {
+  margin: 0 0 26px;
+  font-size: 13.5px;
+  color: var(--accent);
+}
+
+/* Une fois l'immersion inscrite, le bouton reste lisible mais ne se represse pas. */
+.after .cta:disabled {
+  background: var(--accent-dim);
+  color: var(--ink-soft);
+  box-shadow: none;
+  cursor: default;
+}
+
+.cta-tick {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 
 body.timing { overflow: hidden; }
 
