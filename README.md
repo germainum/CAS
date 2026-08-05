@@ -248,9 +248,26 @@ idempotent.
 
 Le dépôt garde des **tirets**, pas des valeurs : si le préremplissage échoue, un
 robot voit une absence plutôt qu'un chiffre périmé, et `renderTempsList()` sert
-les vrais visiteurs comme avant. Un `FAQPage` en JSON-LD reprend **mot pour mot**
-les questions visibles — Google rejette, à juste titre, un balisage qui décrit un
-contenu absent de la page.
+les vrais visiteurs comme avant.
+
+### Le balisage FAQ, et ce qu'il ne fait plus
+
+Un `FAQPage` en JSON-LD reprend **mot pour mot** les six questions visibles —
+Google rejette, à juste titre, un balisage qui décrit un contenu absent de la
+page.
+
+Il faut savoir ce qu'il n'apporte pas. **Les résultats enrichis FAQ n'existent
+plus** : Google les a restreints en août 2023 aux sites gouvernementaux et de
+santé reconnus, puis **entièrement supprimés de la recherche le 7 mai 2026**, y
+compris pour ceux-là. Ce balisage ne produira donc aucun affichage dépliant dans
+les résultats, et le support de la FAQ a quitté le Rich Results Test en juin
+2026 — une absence dans l'outil de test est normale, pas un défaut.
+
+Il est conservé quand même : Google a confirmé continuer à l'analyser pour
+comprendre les pages, il ne coûte que deux kilo-octets, et d'autres
+consommateurs — moteurs concurrents, systèmes de réponse par IA — peuvent s'en
+servir. Ce qui porte la valeur, c'est le **texte visible** des six questions, qui
+compte comme contenu indexable et répond à de vraies recherches.
 
 ### Ce qui reste à faire, et son risque
 
