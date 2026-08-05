@@ -1,44 +1,40 @@
 /* Température du Léman
  *
- * Parti pris typographique : une affirmation en très gros caractères, dont
- * l'adjectif est posé en filet face au noir des mots pleins, et une lecture
- * chiffrée en bas d'écran.
- * Le fond est un dégradé diffus dont les teintes suivent la température de
- * l'eau — du violet glacé au pêche chaud : la couleur porte l'information
- * avant même la lecture du chiffre.
+ * Identité reprise d'une maquette d'app de réservation : violet et lilas, fonds
+ * clairs, cartes blanches très arrondies, icônes en filet, et un histogramme
+ * d'affluence — devenu ici « quand y aller », qui répond à la vraie question
+ * d'un baigneur. La température ne colore plus le fond : elle colore les barres
+ * et les points de la carte, là où elle se compare.
  */
 
 :root {
-  --ink: #0b0f14;
-  --ink-soft: rgba(11, 15, 20, .6);
-  --rule: rgba(11, 15, 20, .16);
-  --paper: #f2f5f9;
+  --ink: #1b1b2f;
+  --ink-soft: rgba(27, 27, 47, .56);
+  --rule: rgba(27, 27, 47, .1);
+  --paper: #f5f5fb;
+  --card: #ffffff;
+  --accent: #7b5cf5;
+  --accent-ink: #ffffff;
+  --accent-soft: #ece7fe;
+  --accent-dim: rgba(123, 92, 245, .16);
 
-  --gutter: 22px;
-  --radius: 20px;
+  --gutter: 20px;
+  --radius: 22px;
+  --radius-sm: 16px;
 }
-
-/* Bandes de température : trois teintes par état, appliquées au dégradé. */
-body[data-band="unknown"] { --c1: #d3d9e6; --c2: #dee2ec; --c3: #e8ecf3; }
-body[data-band="cold"]    { --c1: #9fbcf5; --c2: #c0a9ef; --c3: #bcdcfa; }
-body[data-band="cool"]    { --c1: #9ccbf6; --c2: #a6dcea; --c3: #c8e6f7; }
-body[data-band="fresh"]   { --c1: #9fdfd2; --c2: #bde5bf; --c3: #d3efe4; }
-body[data-band="good"]    { --c1: #c3e79f; --c2: #fbe795; --c3: #b2e0d6; }
-body[data-band="warm"]    { --c1: #ffc78e; --c2: #ffb0ba; --c3: #f2bde3; }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --ink: #f4f7fb;
-    --ink-soft: rgba(244, 247, 251, .56);
-    --rule: rgba(244, 247, 251, .18);
-    --paper: #0a0e13;
+    --ink: #f2f1fa;
+    --ink-soft: rgba(242, 241, 250, .58);
+    --rule: rgba(242, 241, 250, .13);
+    --paper: #13131d;
+    --card: #1e1e2c;
+    --accent: #a48cff;
+    --accent-ink: #17122b;
+    --accent-soft: #272041;
+    --accent-dim: rgba(164, 140, 255, .22);
   }
-  body[data-band="unknown"] { --c1: #1b2230; --c2: #161b24; --c3: #12161d; }
-  body[data-band="cold"]    { --c1: #1e3475; --c2: #34246b; --c3: #10233f; }
-  body[data-band="cool"]    { --c1: #16386b; --c2: #10465a; --c3: #0d2438; }
-  body[data-band="fresh"]   { --c1: #0f4f47; --c2: #17512e; --c3: #0c2b2c; }
-  body[data-band="good"]    { --c1: #2c5a15; --c2: #6a5307; --c3: #10403c; }
-  body[data-band="warm"]    { --c1: #7a3c0c; --c2: #7a1f2c; --c3: #4a1147; }
 }
 
 * { box-sizing: border-box; }
@@ -51,30 +47,25 @@ html {
 body {
   margin: 0;
   color: var(--ink);
-  /* Transparent : le fond opaque recouvrirait le dégradé. */
-  background: transparent;
+  background: var(--paper);
   font: 400 16px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
   overflow-x: hidden;
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Dégradé diffus, fixé derrière le contenu. */
+/* Bandeau lilas en tête, comme l'illustration de la maquette : il habille le
+   haut de l'écran sans que la couleur ne porte d'information. */
 .wash {
-  position: fixed;
-  inset: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 340px;
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(72% 40% at 90% -8%, var(--c1) 0%, transparent 68%),
-    radial-gradient(62% 34% at 0% 8%, var(--c2) 0%, transparent 70%),
-    radial-gradient(88% 40% at 46% 26%, var(--c3) 0%, transparent 72%),
-    var(--paper);
-  /* Le passage d'une bande à l'autre se fait en douceur, pas en saccade. */
-  transition: background 900ms ease;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .wash { transition: none; }
+    radial-gradient(120% 90% at 82% -30%, var(--accent-dim) 0%, transparent 68%),
+    linear-gradient(var(--accent-soft), transparent 92%);
 }
 
 .app {
@@ -83,54 +74,54 @@ body {
   max-width: 620px;
   margin: 0 auto;
   padding: 0 calc(env(safe-area-inset-right) + var(--gutter))
-           calc(env(safe-area-inset-bottom) + 40px)
+           calc(env(safe-area-inset-bottom) + 36px)
            calc(env(safe-area-inset-left) + var(--gutter));
 }
 
-/* ------------------------------------------------------- premier écran */
+/* ------------------------------------------------------------ en-tête */
 
-/* L'écran de préparation occupe l'appareil, et le bouton se pose en bas : le
-   geste principal tombe sous le pouce, l'espace au-dessus laisse respirer. */
 .screen {
   min-height: 100vh;
   min-height: 100dvh;
-  padding-top: calc(env(safe-area-inset-top) + 18px);
-  padding-bottom: 14px;
+  padding-top: calc(env(safe-area-inset-top) + 16px);
+  padding-bottom: 12px;
   display: flex;
   flex-direction: column;
 }
 
 .top {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
 }
 
 .mark {
-  width: 46px;
-  height: 32px;
+  width: 40px;
+  height: 28px;
   fill: none;
-  stroke: var(--ink);
-  stroke-width: 2;
+  stroke: var(--accent);
+  stroke-width: 2.2;
   stroke-linecap: round;
 }
 
+.tools { display: flex; gap: 6px; }
+
 .ghost {
-  width: 38px;
-  height: 38px;
-  margin: -6px -6px 0 0;
+  width: 40px;
+  height: 40px;
   display: grid;
   place-items: center;
   border: 0;
-  background: none;
+  border-radius: 50%;
+  background: var(--card);
   color: var(--ink);
-  opacity: .55;
   cursor: pointer;
+  box-shadow: 0 1px 3px rgba(27, 27, 47, .06);
 }
 
 .ghost svg {
-  width: 19px;
-  height: 19px;
+  width: 18px;
+  height: 18px;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.8;
@@ -142,393 +133,405 @@ body {
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .ghost.busy svg { animation: none; } }
 
-/* ------------------------------------------------------ lecture chiffrée */
+.eyebrow {
+  margin: 26px 0 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
 
-/* Chiffre et origine sur une même ligne de base, comme dans la maquette. */
+/* ---------------------------------------------------------- température */
+
 .readout {
   display: flex;
   align-items: baseline;
-  gap: 14px;
+  gap: 12px;
   flex-wrap: wrap;
-  margin: 2px 0 22px;
+  margin: 6px 0 18px;
 }
-
-
 
 .readout-value {
   margin: 0;
   display: flex;
   align-items: flex-start;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
-  font-size: clamp(3.4rem, 17vw, 4.6rem);
-  font-weight: 900;
-  line-height: .84;
-  letter-spacing: -.05em;
+  font-size: clamp(3.2rem, 16vw, 4.4rem);
+  font-weight: 700;
+  line-height: .9;
+  letter-spacing: -.04em;
   font-variant-numeric: tabular-nums;
 }
 
-.readout-value .degree { font-size: .46em; line-height: 1; }
+.readout-value .degree { font-size: .42em; line-height: 1.1; }
 
-.stale .readout-value { opacity: .42; }
+.readout-source {
+  margin: 0 0 6px;
+  font-size: 12px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
 
-/* ------------------------------------------------------ choix du lieu */
+.stale .readout-value { opacity: .45; }
+
+/* Trois repères en filet, sur le modèle des équipements de la maquette. */
+.facts {
+  display: flex;
+  gap: 26px;
+  margin: 0 0 20px;
+  padding: 0;
+  list-style: none;
+}
+
+.facts li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  letter-spacing: .04em;
+  color: var(--ink-soft);
+  text-align: center;
+}
+
+.facts svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.facts b { display: block; color: var(--ink); font-size: 12.5px; font-weight: 600; }
+
+/* ---------------------------------------------------------- lieux en tuiles */
 
 .places {
   display: flex;
-  gap: 20px;
+  gap: 10px;
   overflow-x: auto;
-  margin: 0 calc(-1 * var(--gutter));
-  padding: 18px var(--gutter) 4px;
+  margin: 0 calc(-1 * var(--gutter)) 20px;
+  padding: 2px var(--gutter) 8px;
   scrollbar-width: none;
   scroll-snap-type: x proximity;
-  /* Le dernier lieu s'estompe au lieu d'être tranché net. */
-  -webkit-mask-image: linear-gradient(to right, #000 86%, transparent 100%);
-  mask-image: linear-gradient(to right, #000 86%, transparent 100%);
 }
 
 .places::-webkit-scrollbar { display: none; }
 
+/* Tuiles carrées : nom du lieu et sa température, la sélection en violet plein. */
 .places button {
   flex: none;
   scroll-snap-align: center;
-  padding: 2px 0;
-  border: 0;
-  border-bottom: 2px solid transparent;
-  background: none;
-  color: var(--ink-soft);
+  width: 92px;
+  padding: 13px 10px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--ink);
   font: inherit;
-  font-size: 14px;
-  white-space: nowrap;
+  text-align: left;
   cursor: pointer;
 }
 
+.places .tile-temp {
+  display: block;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.places .tile-name {
+  display: block;
+  margin-top: 3px;
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .places button[aria-selected="true"] {
-  color: var(--ink);
-  font-weight: 600;
-  border-bottom-color: var(--ink);
+  background: var(--accent);
+  border-color: transparent;
+  color: var(--accent-ink);
 }
 
-/* ------------------------------------------------------------- détails */
+.places button[aria-selected="true"] .tile-name { color: var(--accent-ink); opacity: .8; }
 
-.block {
-  padding: 34px 0 0;
-  border-top: 1px solid var(--rule);
-  margin-top: 34px;
+/* ---------------------------------------------------------------- cartes */
+
+.card {
+  display: block;
+  margin-bottom: 12px;
+  padding: 18px;
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: 0 1px 3px rgba(27, 27, 47, .05);
 }
 
-.micro {
-  margin: 0 0 18px;
+.card-title {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 12px;
-  font-size: 11px;
+  margin: 0 0 14px;
+  font-size: 11.5px;
   font-weight: 600;
-  letter-spacing: .1em;
+  letter-spacing: .13em;
   text-transform: uppercase;
+  color: var(--ink-soft);
 }
 
-.micro-note {
-  font-size: 11px;
-  font-weight: 400;
-  letter-spacing: .04em;
+/* Précision au bout du titre : « le plus chaud vers 21 h », en minuscules. */
+.card-aside {
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: .01em;
   text-transform: none;
   color: var(--ink-soft);
+  opacity: .85;
+  text-align: right;
 }
 
-.micro-note a { color: inherit; }
-
-/* graphique */
-
-.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
-.chart .base { stroke: var(--rule); stroke-width: 1; }
-.chart .axis { fill: var(--ink-soft); font-size: 9px; letter-spacing: .06em; }
-.chart .line { fill: none; stroke: var(--ink); stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
-.chart .line-future { stroke-dasharray: 1.5 4; opacity: .5; }
-.chart .now { fill: var(--ink); }
-.chart .empty { fill: var(--ink-soft); font-size: 11px; }
-
-.legend { display: flex; align-items: center; gap: 7px; margin: 14px 0 0; }
-.legend .key { width: 15px; border-top: 1.75px solid var(--ink); }
-.legend .key-future { border-top-style: dotted; opacity: .5; margin-left: 8px; }
-
-/* stations */
-
-
-
-/* pied de page */
-
-.foot .micro-note { max-width: 46ch; line-height: 1.6; }
-
-.diag { margin-top: 20px; }
-.diag summary { cursor: pointer; }
-
-.diag pre {
-  margin: 12px 0 0;
-  padding: 12px;
-  border: 1px solid var(--rule);
-  white-space: pre-wrap;
-  word-break: break-word;
-  font-size: 10.5px;
-  line-height: 1.6;
+.card-note {
+  margin: 14px 0 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  text-align: center;
   color: var(--ink-soft);
 }
-
-/* --------------------------------------------------- invite & message */
-
-.install {
-  position: fixed;
-  left: 12px;
-  right: 12px;
-  bottom: calc(env(safe-area-inset-bottom) + 12px);
-  max-width: 596px;
-  margin: 0 auto;
-  padding: 14px 16px;
-  background: var(--ink);
-  color: var(--paper);
-  text-align: center;
-  font-size: 14px;
-}
-
-.install p { margin: 0 0 6px; }
-
-.link-btn {
-  border: 0;
-  padding: 4px;
-  background: none;
-  color: inherit;
-  font: inherit;
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-.toast {
-  position: fixed;
-  left: 50%;
-  transform: translateX(-50%);
-  /* Au-dessus du bouton d'action et du ruban : un message ne doit pas masquer
-     le geste principal. */
-  bottom: calc(env(safe-area-inset-bottom) + 132px);
-  max-width: calc(100% - 48px);
-  padding: 10px 18px;
-  background: var(--ink);
-  color: var(--paper);
-  font-size: 13px;
-  letter-spacing: .02em;
-}
-
-/* ------------------------------------------------------------- bain froid */
 
 /* Réglage de la durée : moins, valeur, plus, centrés sur une même ligne. */
 .bath-stepper {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 20px;
+  gap: 22px;
+}
+
+.round {
+  width: 42px;
+  height: 42px;
+  flex: none;
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font: 400 21px/1 -apple-system, BlinkMacSystemFont, sans-serif;
+  cursor: pointer;
 }
 
 .bath-duration {
   margin: 0;
-  min-width: 116px;
+  min-width: 112px;
   display: flex;
   align-items: baseline;
   justify-content: center;
   gap: 6px;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
-  font-size: 2.7rem;
-  font-weight: 900;
+  font-size: 2.5rem;
+  font-weight: 700;
   line-height: 1;
-  letter-spacing: -.035em;
+  letter-spacing: -.03em;
   font-variant-numeric: tabular-nums;
 }
 
-.round {
-  width: 38px;
-  height: 38px;
-  flex: none;
-  border: 1px solid var(--rule);
-  border-radius: 50%;
-  background: none;
-  color: var(--ink);
-  font: 400 20px/1 -apple-system, BlinkMacSystemFont, sans-serif;
-  cursor: pointer;
-}
-
 .bath-unit {
-  font-size: .28em;
+  font-size: .3em;
   font-weight: 600;
   letter-spacing: .1em;
   text-transform: uppercase;
   color: var(--ink-soft);
 }
 
-.solid {
-  width: 100%;
-  padding: 15px 20px;
-  border: 0;
-  background: var(--ink);
-  color: var(--paper);
-  font: inherit;
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: .01em;
+/* ------------------------------------------------------------ engagement */
+
+/* L'engagement et l'action forment un bloc, poussé en bas de l'écran par la
+   marge automatique : le vide se creuse au-dessus d'eux, pas entre les deux. */
+.check {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: auto 0 12px;
+  padding: 16px 18px;
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: 0 1px 3px rgba(27, 27, 47, .05);
   cursor: pointer;
 }
 
-/* ----------------------------------------------------- minuteur plein écran */
+.check input { position: absolute; opacity: 0; width: 0; height: 0; }
 
-.timer {
-  position: fixed;
-  inset: 0;
-  z-index: 10;
+.check .box {
+  flex: none;
+  width: 26px;
+  height: 26px;
   display: grid;
   place-items: center;
-  padding: calc(env(safe-area-inset-top) + 24px) 24px calc(env(safe-area-inset-bottom) + 24px);
-  background: var(--paper);
-  /* La teinte reprend celle de la bande thermique en cours. */
-  background-image:
-    radial-gradient(70% 40% at 84% -6%, var(--c1) 0%, transparent 70%),
-    radial-gradient(60% 34% at 4% 10%, var(--c2) 0%, transparent 72%);
-  text-align: center;
+  border: 1.5px solid var(--rule);
+  border-radius: 9px;
+  background: transparent;
 }
 
-.timer[hidden] { display: none; }
+.check .box svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: var(--accent-ink);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0;
+}
 
-.timer-inner { width: 100%; max-width: 420px; }
+.check input:checked ~ .box { background: var(--accent); border-color: transparent; }
+.check input:checked ~ .box svg { opacity: 1; }
+.check input:focus-visible ~ .box { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-.timer-phase {
+.check-text { font-size: 14.5px; font-weight: 500; line-height: 1.4; }
+
+/* ---------------------------------------------------------------- action */
+
+.cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
   margin: 0;
-  font-size: 12px;
+  padding: 17px 20px;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font: inherit;
+  font-size: 16px;
   font-weight: 600;
-  letter-spacing: .16em;
-  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(123, 92, 245, .28);
+}
+
+/* Tant que l'engagement n'est pas coché, le bouton reste visiblement inerte. */
+.cta:disabled {
+  background: var(--accent-dim);
   color: var(--ink-soft);
+  box-shadow: none;
+  cursor: not-allowed;
 }
 
-.timer-clock {
-  margin: 10px 0 0;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
-  font-size: clamp(4.6rem, 26vw, 7.5rem);
-  font-weight: 900;
-  line-height: .9;
-  letter-spacing: -.05em;
-  font-variant-numeric: tabular-nums;
-}
+.cta-icon { width: 14px; height: 14px; fill: currentColor; }
 
-.timer-hint {
-  margin: 14px auto 0;
-  max-width: 26ch;
+/* ---------------------------------------------------------------- blocs */
+
+.block { margin-top: 30px; }
+
+.micro {
+  margin: 0 0 16px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
   font-size: 15px;
-  line-height: 1.45;
+  font-weight: 600;
+  letter-spacing: -.01em;
 }
 
-.timer-bar {
-  margin: 26px 0 10px;
-  height: 2px;
-  background: var(--rule);
-}
-
-.timer-bar span {
-  display: block;
-  height: 100%;
-  width: 0;
-  background: var(--ink);
-  transition: width 250ms linear;
-}
-
-.timer-meta, .timer-note {
-  margin: 0;
-  font-size: 11px;
-  letter-spacing: .06em;
-  text-transform: uppercase;
+.micro-note {
+  font-size: 11.5px;
+  font-weight: 400;
+  letter-spacing: .03em;
   color: var(--ink-soft);
 }
 
-.timer-warn {
-  margin: 24px auto 0;
-  max-width: 32ch;
-  padding: 12px 14px;
-  border: 1px solid var(--rule);
-  font-size: 13px;
-  line-height: 1.45;
+.micro-note a { color: inherit; }
+
+/* --------------------------------------------- quand y aller (histogramme) */
+
+/* Repris de l'histogramme d'affluence de la maquette : une barre par échéance
+   du modèle, la plus chaude en violet plein. */
+.bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  height: 112px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-/* L'échéance et le dépassement doivent s'imposer, pas se deviner. */
-.timer[data-phase="exit"] .timer-clock { opacity: .82; }
-.timer[data-phase="done"] .timer-warn { background: var(--ink); color: var(--paper); border-color: transparent; }
-.timer[data-phase="done"] .timer-clock { animation: pulse 1.4s ease-in-out infinite; }
-
-@keyframes pulse { 50% { opacity: .45; } }
-@media (prefers-reduced-motion: reduce) {
-  .timer[data-phase="done"] .timer-clock { animation: none; }
-  .timer-bar span { transition: none; }
-}
-
-.timer-actions {
+.bars li {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  margin-top: 26px;
+  gap: 8px;
+  height: 100%;
+  justify-content: flex-end;
 }
 
-.timer-actions .solid { max-width: 260px; }
-
-/* Pendant l'immersion, la page derrière ne défile pas. */
-body.timing { overflow: hidden; }
-
-/* ------------------------------------------------------------- balayage */
-
-/* Le contenu entre depuis le côté d'où vient le geste. Le déplacement reste
-   discret : c'est un repère de direction, pas une transition spectaculaire. */
-@keyframes enter-from-right {
-  from { opacity: 0; transform: translateX(22px); }
-  to   { opacity: 1; transform: none; }
+.bars .bar {
+  width: 100%;
+  min-height: 6px;
+  border-radius: 10px;
+  background: var(--accent-dim);
 }
 
-@keyframes enter-from-left {
-  from { opacity: 0; transform: translateX(-22px); }
-  to   { opacity: 1; transform: none; }
+.bars li.best .bar { background: var(--accent); }
+
+.bars .bar-val {
+  font-size: 11.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
-.enter-next { animation: enter-from-right 260ms cubic-bezier(.22, .61, .36, 1); }
-.enter-prev { animation: enter-from-left 260ms cubic-bezier(.22, .61, .36, 1); }
-
-@media (prefers-reduced-motion: reduce) {
-  .enter-next, .enter-prev { animation: none; }
+.bars .bar-hour {
+  font-size: 11px;
+  letter-spacing: .03em;
+  color: var(--ink-soft);
 }
 
-/* Le geste ne doit pas sélectionner le texte du titre au passage. */
+.bars li.best .bar-val { color: var(--accent); }
+.bars-empty { margin: 0; font-size: 13px; color: var(--ink-soft); }
+
+/* ------------------------------------------------------------ courbe 7 jours */
+
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart .base { stroke: var(--rule); stroke-width: 1; }
+.chart .axis { fill: var(--ink-soft); font-size: 9px; letter-spacing: .06em; }
+.chart .line { fill: none; stroke: var(--accent); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.chart .line-future { stroke-dasharray: 2 5; opacity: .55; }
+.chart .now { fill: var(--accent); }
+.chart .empty { fill: var(--ink-soft); font-size: 11px; }
+
+.legend { display: flex; align-items: center; gap: 7px; margin: 14px 0 0; }
+.legend .key { width: 15px; border-top: 2.2px solid var(--accent); }
+.legend .key-future { border-top-style: dotted; opacity: .55; margin-left: 8px; }
 
 /* ---------------------------------------------------------- carte du lac */
 
 .map {
-  /* Occupe la hauteur restante du premier écran, sans jamais la dépasser. */
-  min-height: 190px;
-  display: grid;
-  /* Ancrée sous la température : le chiffre et la carte forment un bloc, et
-     l'espace se creuse d'un seul tenant avant le bouton d'action. */
-  place-items: start center;
-  margin: 26px -6px 0;
+  min-height: 180px;
+  margin: 0 -4px;
 }
 
-.map svg { display: block; width: 100%; max-height: 100%; height: auto; overflow: visible; }
+.map svg { display: block; width: 100%; height: auto; overflow: visible; }
 
-
-/* Le lac se lit comme une surface, pas comme un simple tracé. */
 .map .shore {
-  fill: color-mix(in srgb, var(--ink) 7%, transparent);
-  stroke: var(--rule);
+  fill: var(--accent-soft);
+  stroke: var(--accent);
   stroke-width: 1;
+  stroke-opacity: .35;
 }
 
-@supports not (color: color-mix(in srgb, red, blue)) {
-  .map .shore { fill: rgba(125, 145, 165, .18); }
-}
-
-.map .hit { fill: transparent; cursor: pointer; }
-.map .dot { transition: r 180ms ease; }
-.map .ring { fill: none; stroke: var(--ink); stroke-width: 1.5; }
+/* Zone sensible unique, au-dessus du dessin ; le choix se fait à la distance. */
+.map .hitarea { fill: transparent; cursor: pointer; }
+.map .lab, .map .nom, .map .dot, .map .ring { pointer-events: none; }
+.map .ring { fill: none; stroke: var(--accent); stroke-width: 1.8; }
 
 .map .lab {
   fill: var(--ink);
@@ -547,66 +550,115 @@ body.timing { overflow: hidden; }
 
 .map .spot.on .nom { fill: var(--ink); }
 .map .spot:focus { outline: none; }
-.map .spot:focus-visible .ring,
-.map .spot:focus-visible .dot { stroke: var(--ink); stroke-width: 2; }
+.map .spot:focus-visible .dot { stroke: var(--accent); stroke-width: 2; }
 
-@media (prefers-reduced-motion: reduce) { .map .dot { transition: none; } }
+.map .me-dot { fill: var(--ink); }
+.map .me-halo { fill: var(--accent-dim); stroke: var(--ink); stroke-width: 1; }
 
-/* ------------------------------------------ consignes et confirmation */
+/* -------------------------------------------------------------- pied de page */
 
+.foot { margin-top: 34px; }
+.foot .micro-note { max-width: 46ch; line-height: 1.6; }
+
+.diag { margin-top: 18px; }
+.diag summary { cursor: pointer; }
+
+.diag pre {
+  margin: 12px 0 0;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 10.5px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+/* ------------------------------------------------- consignes et minuteur */
+
+.timer {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  padding: calc(env(safe-area-inset-top) + 24px) 22px calc(env(safe-area-inset-bottom) + 24px);
+  background: var(--paper);
+  background-image: radial-gradient(120% 60% at 80% -20%, var(--accent-dim) 0%, transparent 70%);
+  text-align: center;
+  overflow-y: auto;
+}
+
+.timer[hidden] { display: none; }
 .timer[data-state="briefing"] .timer-inner,
 .timer[data-state="running"] .brief { display: none; }
 
-.brief { width: 100%; max-width: 420px; }
+.brief, .timer-inner { width: 100%; max-width: 420px; }
+
+.timer-phase {
+  margin: 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
 
 .brief-duration {
   margin: 10px 0 22px;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
-  font-size: 2rem;
-  font-weight: 900;
+  font-size: 2.6rem;
+  font-weight: 700;
   letter-spacing: -.03em;
 }
 
 .brief-list {
   list-style: none;
-  margin: 0 0 30px;
-  padding: 0;
+  margin: 0 0 28px;
+  padding: 18px;
+  border-radius: var(--radius);
+  background: var(--card);
   text-align: left;
-  font-size: 14.5px;
+  font-size: 14px;
   line-height: 1.5;
 }
 
 .brief-list li {
-  padding: 11px 0 11px 22px;
-  border-top: 1px solid var(--rule);
+  padding: 10px 0 10px 20px;
   position: relative;
 }
 
-/* Une puce discrète : la lecture doit rester rapide. */
+.brief-list li + li { border-top: 1px solid var(--rule); }
+
 .brief-list li::before {
   content: '';
   position: absolute;
-  left: 4px;
-  top: 20px;
-  width: 6px;
-  height: 6px;
+  left: 2px;
+  top: 19px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
-  background: var(--ink);
+  background: var(--accent);
 }
 
 .hold { display: grid; place-items: center; gap: 12px; }
 
 .hold-btn {
   position: relative;
-  width: 112px;
-  height: 112px;
+  width: 116px;
+  height: 116px;
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background: none;
+  background: var(--card);
   color: var(--ink);
   cursor: pointer;
-  /* Le maintien ne doit pas déclencher la sélection ni le menu contextuel. */
+  box-shadow: 0 6px 20px rgba(123, 92, 245, .18);
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
@@ -618,27 +670,16 @@ body.timing { overflow: hidden; }
   inset: 0;
   width: 100%;
   height: 100%;
-  transform: rotate(-90deg);   /* le remplissage part du haut */
+  transform: rotate(-90deg);
 }
 
-.hold-track {
-  fill: none;
-  stroke: var(--rule);
-  stroke-width: 5;
-}
-
-.hold-fill {
-  fill: none;
-  stroke: var(--ink);
-  stroke-width: 5;
-  stroke-linecap: round;
-}
+.hold-track { fill: none; stroke: var(--accent-dim); stroke-width: 6; }
+.hold-fill { fill: none; stroke: var(--accent); stroke-width: 6; stroke-linecap: round; }
 
 .hold-label {
   position: relative;
   font-size: 14px;
   font-weight: 600;
-  letter-spacing: .01em;
 }
 
 .hold-btn.held { transform: scale(.97); }
@@ -648,90 +689,10 @@ body.timing { overflow: hidden; }
   .hold-btn { transition: transform 160ms ease; }
 }
 
-.brief .link-btn { margin-top: 22px; }
-
-/* ------------------------------------------------- position et localisation */
-
-.tools { display: flex; gap: 2px; margin: -6px -8px 0 0; }
-.tools .ghost { margin: 0; }
-
-#locate svg { fill: none; stroke-width: 1.7; }
-#locate.busy { opacity: 1; }
-#locate.busy svg { animation: pulse 1s ease-in-out infinite; }
-
-/* Position de l'utilisateur sur la carte : un point distinct des lieux. */
-.map .me-dot { fill: var(--ink); }
-
-.map .me-halo {
-  fill: color-mix(in srgb, var(--ink) 18%, transparent);
-  stroke: var(--ink);
-  stroke-width: 1;
-}
-
-@supports not (color: color-mix(in srgb, red, blue)) {
-  .map .me-halo { fill: rgba(125, 145, 165, .3); }
-}
-
-/* --------------------------------------------------- appel à l'action */
-
-/* Le geste principal de l'app : lancer le bain. Pleine largeur, à portée de
-   pouce, avec la durée conseillée déjà lisible. */
-.cta {
-  display: block;
-  width: 100%;
-  margin: 14px 0 2px;
-  padding: 16px 20px;
-  border: 0;
-  background: var(--ink);
-  color: var(--paper);
-  font: inherit;
-  font-size: 16px;
-  font-weight: 600;
-  letter-spacing: .01em;
-  cursor: pointer;
-}
-
-.cta-note {
-  display: block;
-  margin-top: 3px;
-  font-size: 11px;
-  font-weight: 400;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  opacity: .72;
-}
-
-/* Le geste ne doit pas sélectionner les grands caractères au passage. */
-.readout-value { -webkit-user-select: none; user-select: none; }
-
-/* -------------------------------------------- réglage dans les consignes */
-
-.brief .bath-stepper { margin-bottom: 6px; }
-
-.brief-duration {
-  margin: 0;
-  flex: 1;
-  display: flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: 8px;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
-  font-size: 2.6rem;
-  font-weight: 900;
-  line-height: 1;
-  letter-spacing: -.03em;
-  font-variant-numeric: tabular-nums;
-}
-
-.brief-rule {
-  margin: 0 0 24px;
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--ink-soft);
-}
+.brief .link-btn { margin-top: 20px; }
 
 .brief-sources {
-  margin: 20px 0 0;
+  margin: 18px 0 0;
   font-size: 10.5px;
   line-height: 1.6;
   color: var(--ink-soft);
@@ -739,163 +700,33 @@ body.timing { overflow: hidden; }
 
 .brief-sources a { color: inherit; }
 
-/* ------------------------------------------------ écran de préparation */
+/* ---------------------------------------------------------- immersion */
 
-.eyebrow {
-  margin: 18px 0 0;
-  font-size: 11.5px;
-  font-weight: 600;
-  letter-spacing: .13em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
+.timer-clock {
+  margin: 10px 0 0;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+  font-size: clamp(4.2rem, 24vw, 6.6rem);
+  font-weight: 700;
+  line-height: .9;
+  letter-spacing: -.04em;
+  font-variant-numeric: tabular-nums;
 }
 
-.readout-source {
-  margin: 0 0 6px;
-  font-size: 11.5px;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
+.timer-hint {
+  margin: 12px auto 0;
+  max-width: 26ch;
+  font-size: 15px;
+  line-height: 1.45;
 }
 
-/* Cartes translucides : elles se posent sur le dégradé sans le masquer. */
-.card {
-  display: block;
-  margin-bottom: 12px;
-  padding: 18px;
-  border-radius: var(--radius);
-  background: color-mix(in srgb, var(--paper) 68%, transparent);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-}
-
-@supports not (color: color-mix(in srgb, red, blue)) {
-  .card { background: rgba(255, 255, 255, .6); }
-}
-
-@media (prefers-color-scheme: dark) {
-  .card { background: rgba(255, 255, 255, .07); }
-}
-
-.card-title {
-  margin: 0 0 12px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: .13em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
-}
-
-.card-note {
-  margin: 12px 0 0;
-  font-size: 12.5px;
-  line-height: 1.5;
-  text-align: center;
-  color: var(--ink-soft);
-}
-
-/* --------------------------------------------------------- engagement */
-
-.check {
-  display: flex;
-  align-items: center;
-  gap: 13px;
-  padding: 4px 2px;
-  cursor: pointer;
-}
-
-.check input {
-  position: absolute;
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.check .box {
-  flex: none;
-  width: 26px;
-  height: 26px;
-  display: grid;
-  place-items: center;
-  border: 1.5px solid var(--rule);
-  border-radius: 8px;
-  background: transparent;
-}
-
-.check .box svg {
-  width: 15px;
-  height: 15px;
-  fill: none;
-  stroke: var(--paper);
-  stroke-width: 2.2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  opacity: 0;
-}
-
-.check input:checked ~ .box {
-  background: var(--ink);
-  border-color: var(--ink);
-}
-
-.check input:checked ~ .box svg { opacity: 1; }
-.check input:focus-visible ~ .box { outline: 2px solid var(--ink); outline-offset: 2px; }
-
-.check-text { font-size: 14.5px; font-weight: 500; line-height: 1.4; }
-
-/* ----------------------------------------------------------- action */
-
-.cta {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  width: 100%;
-  /* Poussé au bas de l'écran par l'espace disponible. */
-  margin: auto 0 0;
-  padding: 17px 20px;
-  border: 0;
-  border-radius: var(--radius);
-  background: var(--ink);
-  color: var(--paper);
-  font: inherit;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-/* Tant que l'engagement n'est pas coché, le bouton reste visiblement inerte. */
-.cta:disabled { opacity: .32; cursor: not-allowed; }
-
-.cta-icon { width: 15px; height: 15px; fill: currentColor; }
-
-.cta-under {
-  margin: 12px 0 0;
-  text-align: center;
-  font-size: 11.5px;
-  line-height: 1.5;
-  color: var(--ink-soft);
-}
-
-/* --------------------------------------------------- respiration guidée */
-
-.breath {
-  position: relative;
-  display: grid;
-  place-items: center;
-  height: 132px;
-  margin: 18px 0 4px;
-}
-
+.breath { position: relative; display: grid; place-items: center; height: 128px; margin: 16px 0 4px; }
 .breath[hidden] { display: none; }
 
-/* Le cercle s'ouvre à l'inspiration, se referme à l'expiration : le rythme se
-   suit des yeux, sans avoir à lire. */
 .breath-ring {
   position: absolute;
-  width: 116px;
-  height: 116px;
-  border: 2px solid var(--ink);
+  width: 112px;
+  height: 112px;
+  border: 2.5px solid var(--accent);
   border-radius: 50%;
   opacity: .35;
   transform: scale(.62);
@@ -909,3 +740,123 @@ body.timing { overflow: hidden; }
   letter-spacing: .12em;
   text-transform: uppercase;
 }
+
+.timer-bar {
+  margin: 24px 0 10px;
+  height: 6px;
+  border-radius: 6px;
+  background: var(--accent-dim);
+  overflow: hidden;
+}
+
+.timer-bar span {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: 6px;
+  background: var(--accent);
+  transition: width 250ms linear;
+}
+
+.timer-meta, .timer-note {
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.timer-warn {
+  margin: 22px auto 0;
+  max-width: 32ch;
+  padding: 13px 15px;
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.timer[data-phase="done"] .timer-warn { background: var(--accent); color: var(--accent-ink); }
+.timer[data-phase="done"] .timer-clock { animation: pulse 1.4s ease-in-out infinite; }
+
+@keyframes pulse { 50% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) {
+  .timer[data-phase="done"] .timer-clock { animation: none; }
+  .timer-bar span, .breath-ring { transition: none; }
+}
+
+.timer-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-top: 24px;
+}
+
+.timer-actions .cta { max-width: 260px; margin: 0; }
+
+body.timing { overflow: hidden; }
+
+/* ------------------------------------------------------- invite & message */
+
+.link-btn {
+  border: 0;
+  padding: 6px;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.install {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(env(safe-area-inset-bottom) + 12px);
+  max-width: 596px;
+  margin: 0 auto;
+  padding: 16px;
+  border-radius: var(--radius);
+  background: var(--card);
+  text-align: center;
+  font-size: 14px;
+  box-shadow: 0 10px 30px rgba(27, 27, 47, .16);
+}
+
+.install p { margin: 0 0 6px; }
+
+.toast {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(env(safe-area-inset-bottom) + 116px);
+  max-width: calc(100% - 44px);
+  padding: 11px 18px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 13.5px;
+  text-align: center;
+}
+
+/* ------------------------------------------------------------- balayage */
+
+@keyframes enter-from-right {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes enter-from-left {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: none; }
+}
+
+.enter-next { animation: enter-from-right 260ms cubic-bezier(.22, .61, .36, 1); }
+.enter-prev { animation: enter-from-left 260ms cubic-bezier(.22, .61, .36, 1); }
+
+@media (prefers-reduced-motion: reduce) {
+  .enter-next, .enter-prev { animation: none; }
+}
+
+.readout-value { -webkit-user-select: none; user-select: none; }
