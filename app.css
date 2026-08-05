@@ -796,23 +796,41 @@ body.timing { overflow: hidden; }
   cursor: pointer;
 }
 
-/* Dans le bandeau, juste au-dessus du bouton : c'est le conteneur qui garantit
-   qu'ils ne se recouvrent pas, et sa hauteur mesurée qui protège le pied de page. */
+/* Une ligne au pied de page, dans la taille des mentions de sources : elle se
+   remarque quand on cherche à installer, et ne coûte rien au reste du temps. */
 .install {
-  max-width: 620px;
-  margin: 0 auto 10px;
-  padding: 14px 16px;
-  border-radius: var(--radius);
-  background: var(--card);
-  text-align: center;
-  font-size: 14px;
-  line-height: 1.45;
-  box-shadow: 0 6px 20px rgba(27, 27, 47, .14);
-  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin: 0 0 18px;
+  font-size: 11.5px;
+  line-height: 1.6;
+  letter-spacing: .02em;
+  color: var(--ink-soft);
 }
 
 .install[hidden] { display: none; }
-.install p { margin: 0 0 4px; }
+
+.install svg {
+  flex: none;
+  width: 15px;
+  height: 15px;
+  margin-top: 2px;
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.install b { color: var(--ink); font-weight: 600; }
+
+.install .link-btn {
+  flex: none;
+  padding: 0;
+  font-size: 11.5px;
+  text-decoration: underline;
+}
 
 .toast {
   position: fixed;
