@@ -2,4 +2,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://bainsfroidstemps.ch/sitemap.xml
+Sitemap: https://bainfroidtemps.ch/sitemap.xml

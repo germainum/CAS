@@ -3,7 +3,7 @@
      déclarer l'URL canonique et la fréquence de mise à jour du contenu. -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://bainsfroidstemps.ch/</loc>
+    <loc>https://bainfroidtemps.ch/</loc>
     <changefreq>hourly</changefreq>
     <priority>1.0</priority>
   </url>
