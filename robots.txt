@@ -2,4 +2,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://germainum.github.io/CAS/sitemap.xml
+Sitemap: https://bainsfroidstemps.ch/sitemap.xml
