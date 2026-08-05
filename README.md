@@ -31,8 +31,11 @@ lire, une décision à prendre.
   l'**âge du relevé**, et la **source** — nom de la station officielle, ou `Eawag`
   pour la simulation. Aucun de ces trois ne répète le chiffre : ils disent d'où il
   vient et s'il bouge ;
-- la **durée de mon bain froid**, réglable, qui découle de la température ;
-- le **bouton de lancement**, poussé en bas de l'écran par une marge automatique.
+- **mon temps de présence**, réglable, qui découle de la température ;
+- le **bouton de lancement** — « Je me jette à l'eau ». Il vit dans un bandeau
+  fixe, toujours visible, y compris en parcourant la carte ou la courbe plus bas :
+  le geste ne doit dépendre ni de remonter pour le retrouver, ni d'un excès de
+  prudence pour l'éviter par mégarde.
 
 Le **lieu le plus proche de vous** est sélectionné d'emblée si la localisation est
 autorisée, avec la distance affichée.
@@ -60,6 +63,15 @@ Pendant l'immersion, une **respiration guidée** accompagne l'entrée dans l'eau
 quatre secondes d'inspiration, six d'expiration, l'expiration allongée étant ce
 qui calme la réponse au choc thermique. Un cercle s'ouvre et se referme au rythme
 de la consigne, pour ne pas avoir à lire.
+
+Un **message du coach** l'accompagne, ancré dans le temps plutôt que dans la
+mécanique de sécurité : « Installe-toi » à 0:00, « le premier souffle coupé,
+c'est normal » à 0:15, « ton corps s'ajuste » à une minute, « rien à prouver »
+à mi-parcours, « encore un souffle » dans la dernière minute, « voilà » à
+l'échéance — et pendant le dépassement. `bathCoach()` dans `sources.js` retient
+le seuil le plus avancé déjà atteint ; sur un bain très court, où plusieurs
+seuils tombent à la même seconde, les seuils relatifs à la durée choisie
+(mi-parcours, dernière minute, fin) l'emportent sur ceux à heure fixe.
 
 Le lancement demande **deux gestes** : « Démarrer », qui affiche les consignes
 essentielles, puis un **maintien d'une seconde** sur un bouton circulaire dont
@@ -168,7 +180,7 @@ utile depuis l'iPhone lui-même, il liste les appels réussis ou échoués.
 | `sw.js` | service worker : réseau d'abord, cache en secours |
 | `manifest.webmanifest` | nom, icônes, mode plein écran |
 | `tools/build-model-data.mjs` | précalcul de `data/model.json` dans la CI |
-| `tools/test-parsers.mjs` | 81 tests sur `sources.js` |
+| `tools/test-parsers.mjs` | 86 tests sur `sources.js` |
 | `tools/check-sources.mjs` | vérification des API en conditions réelles |
 | `tools/make-icons.py` | génération des icônes PNG |
 

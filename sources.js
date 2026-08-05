@@ -453,6 +453,33 @@ export function bathPhase(elapsedSec, totalSec) {
   return { key: 'steady', label: 'Reste près du bord', hint: 'Souffle régulier, épaules relâchées.' };
 }
 
+// Messages du coach, ancrés dans le temps plutôt que dans les phases
+// mécaniques ci-dessus : le ton reste posé même quand la mécanique de sécurité
+// s'accélère. Les seuils relatifs (mi-parcours, dernière minute, fin) passent
+// en premier dans la liste : sur un bain très court, où plusieurs seuils
+// tombent à la même seconde, ce sont eux qui doivent l'emporter sur les
+// messages à heure fixe — plus pertinents pour la durée réellement choisie.
+function bathCoachAnchors(totalSec) {
+  return [
+    { at: totalSec, msg: 'Voilà. Rien de spectaculaire, et pourtant. À demain, peut-être.' },
+    { at: Math.max(0, totalSec - 60), msg: 'Encore un souffle, tranquille. Puis tu sors quand tu veux.' },
+    { at: totalSec / 2, msg: 'Tu es bien. Rien à prouver, juste à être là.' },
+    { at: 60, msg: 'Ton corps s’ajuste. Reste avec ta respiration, pas avec le froid.' },
+    { at: 15, msg: 'Le premier souffle coupé, c’est normal. Il repart. Laisse-le repartir.' },
+    { at: 0, msg: 'Installe-toi. Trois grandes respirations avant d’entrer.' },
+  ];
+}
+
+export function bathCoach(elapsedSec, totalSec) {
+  if (!(totalSec > 0)) return '';
+  // Le seuil le plus avancé déjà atteint l'emporte ; un dépassement (elapsedSec
+  // au-delà de totalSec) reste sur le message de fin, pas sur un seuil dépassé.
+  const hit = bathCoachAnchors(totalSec)
+    .sort((a, b) => b.at - a.at)
+    .find((a) => elapsedSec >= a.at);
+  return hit ? hit.msg : '';
+}
+
 // Respiration guidée : quatre secondes d'inspiration, six d'expiration. Le
 // rythme allongé à l'expiration est ce qui calme la réponse au choc thermique.
 export const BREATH_IN = 4;

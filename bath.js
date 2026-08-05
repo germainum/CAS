@@ -6,7 +6,7 @@
 // en arrière-plan ou que l'écran s'éteint, et un compteur incrémental dériverait.
 // Une session en cours est conservée, de sorte qu'un rechargement ne la perde pas.
 
-import { BATH_MAX_MINUTES, bathPhase, bathPlan, breathCue, formatClock } from './sources.js';
+import { BATH_MAX_MINUTES, bathCoach, bathPhase, bathPlan, breathCue, formatClock } from './sources.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -81,13 +81,9 @@ function renderPlan() {
   $('bathMinutes').textContent = minutes;
   $('briefMinutes').textContent = minutes;
 
-  if (!plan) {
-    $('bathNote').textContent = 'Température inconnue : durée à régler à la main.';
-    return;
-  }
-  const parts = ['Une minute par degré'];
-  if (plan.capped) parts.push(`plafonné à ${BATH_MAX_MINUTES} min`);
-  $('bathNote').textContent = parts.join(' · ');
+  $('bathNote').textContent = plan
+    ? 'Une minute par degré. Ni plus, ni moins que ce qui te fait du bien.'
+    : 'Température inconnue : durée à régler à la main.';
 }
 
 function renderTimer() {
@@ -98,7 +94,10 @@ function renderTimer() {
 
   $('timerClock').textContent = formatClock(Math.abs(left));
   $('timerPhase').textContent = phase.label;
-  $('timerHint').textContent = phase.hint;
+  // Le repère de sécurité (respire, reste au bord…) reste au-dessus ; le
+  // message du coach, ancré dans le temps plutôt que dans la mécanique, porte
+  // le ton de l'immersion.
+  $('timerHint').textContent = bathCoach(el, session.totalSec);
   $('timer').dataset.phase = phase.key;
 
   const pct = Math.min(100, (el / session.totalSec) * 100);

@@ -5,7 +5,7 @@
 import assert from 'node:assert/strict';
 
 import {
-  BATH_MAX_MINUTES, CFG, LAKE_OUTLINE, SPOTS, asArray, bathPhase, bathPlan, bestReading,
+  BATH_MAX_MINUTES, CFG, LAKE_OUTLINE, SPOTS, asArray, bathCoach, bathPhase, bathPlan, bestReading,
   breathCue, distanceKm, nearestSpot, pointInPolygon, projectPoints, snapshotCurrentTemps,
   trend,
   formatClock, isStale, mood, nextIndex, parseMeasuredStations, swipeDecision,
@@ -737,6 +737,42 @@ test('l’échéance et le dépassement sont un même état, sans ambiguïté', 
 test('une durée absurde ne fait pas planter les phases', () => {
   assert.equal(bathPhase(10, 0).key, 'idle');
   assert.equal(bathPhase(10, -5).key, 'idle');
+});
+
+console.log('\nbain froid : messages du coach');
+
+test('les quatre premiers seuils, sur un bain de dix minutes', () => {
+  const msg = (el) => bathCoach(el, 600);
+  assert.match(msg(0), /Installe-toi/);
+  assert.match(msg(10), /Installe-toi/, 'rien de nouveau avant le seuil suivant');
+  assert.match(msg(15), /premier souffle/);
+  assert.match(msg(59), /premier souffle/);
+  assert.match(msg(60), /s’ajuste/);
+});
+
+test('mi-parcours puis dernière minute, avant la fin', () => {
+  assert.match(bathCoach(300, 600), /Rien à prouver/);
+  assert.match(bathCoach(539, 600), /Rien à prouver/);
+  assert.match(bathCoach(540, 600), /Encore un souffle/);
+  assert.match(bathCoach(599, 600), /Encore un souffle/);
+});
+
+test('la fin l’emporte à l’échéance, et reste pendant le dépassement', () => {
+  assert.match(bathCoach(600, 600), /Voilà/);
+  assert.match(bathCoach(900, 600), /Voilà/, 'un dépassement ne doit pas revenir à un seuil antérieur');
+});
+
+test('sur un bain très court, les seuils relatifs priment sur ceux à heure fixe', () => {
+  // À 60 s, mi-parcours (30 s), dernière minute (0 s) et le seuil fixe « corps
+  // qui s'ajuste » (60 s) coïncident tous avec la fin. C'est elle qui doit
+  // l'emporter : la fin est un fait, pas un seuil parmi d'autres.
+  assert.match(bathCoach(60, 60), /Voilà/);
+  assert.match(bathCoach(30, 60), /Rien à prouver/, 'mi-parcours prime sur le seuil à 15 s ou 0 s');
+});
+
+test('sans durée, aucun message n’est inventé', () => {
+  assert.equal(bathCoach(10, 0), '');
+  assert.equal(bathCoach(10, -5), '');
 });
 
 test('formatClock affiche minutes et secondes, toujours sur deux chiffres', () => {
