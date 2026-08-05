@@ -1,4 +1,4 @@
-# Température du Léman
+# Bains Froids Léman
 
 Application web installable (PWA) pour préparer un bain froid dans le Léman : la
 température de l'eau à l'endroit où vous êtes, la durée conseillée qui en découle,
