@@ -23,6 +23,9 @@
   --gutter: 20px;
   --radius: 22px;
   --radius-sm: 16px;
+  /* Hauteur du bandeau d'action fixe (bouton + ses marges) : sert à réserver la
+     place en bas de page, plutôt que de deviner à chaque endroit qui en a besoin. */
+  --dock-h: 82px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -76,8 +79,10 @@ body {
   z-index: 1;
   max-width: 620px;
   margin: 0 auto;
+  /* Le bandeau d'action est fixe et flotte par-dessus : sans cette réserve,
+     il couvrirait le pied de page plutôt que de simplement le surplomber. */
   padding: 0 calc(env(safe-area-inset-right) + var(--gutter))
-           calc(env(safe-area-inset-bottom) + 36px)
+           calc(env(safe-area-inset-bottom) + var(--dock-h) + 20px)
            calc(env(safe-area-inset-left) + var(--gutter));
 }
 
@@ -87,7 +92,9 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
   padding-top: calc(env(safe-area-inset-top) + 16px);
-  padding-bottom: 12px;
+  /* Même réserve qu'en pied de page : la carte de durée, centrée par marge
+     automatique, ne doit pas se retrouver sous le bandeau fixe. */
+  padding-bottom: calc(var(--dock-h) + 12px);
   display: flex;
   flex-direction: column;
 }
@@ -341,14 +348,32 @@ body {
 
 /* ---------------------------------------------------------------- action */
 
+/* Toujours à l'écran, quel que soit le défilement : le geste de lancement ne
+   doit dépendre ni de remonter pour le retrouver, ni d'un excès de prudence
+   pour l'éviter par mégarde en parcourant la carte ou la courbe. Un dégradé
+   plutôt qu'un fond plat, pour que le contenu qui défile dessous s'estompe au
+   lieu de s'interrompre net sous le bouton. */
+.cta-dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
+  padding: 16px var(--gutter) calc(env(safe-area-inset-bottom) + 16px);
+  background: linear-gradient(to top, var(--paper) 60%, transparent);
+  pointer-events: none;
+}
+
+.cta-dock .cta { pointer-events: auto; }
+
 .cta {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
   width: 100%;
-  /* Poussé en bas de l'écran : le vide se creuse au-dessus, jamais sous lui. */
-  margin: auto 0 0;
+  max-width: 620px;
+  margin: 0 auto;
   padding: 17px 20px;
   border: 0;
   border-radius: var(--radius);
