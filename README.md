@@ -223,6 +223,44 @@ en direct »), une description, l'URL canonique, les balises **Open Graph** et
 Google prend une app pour un article de blog. `robots.txt` et `sitemap.xml`
 complètent l'ensemble.
 
+### Le vrai plafond : du texte à indexer
+
+L'app était **invisible pour un moteur de recherche**, et pas à cause de ses
+balises. Mesuré sur la page : **125 mots indexables**, dont l'essentiel était de
+l'habillage (« Fermer », « Offre-moi un café »), **aucun `<h1>`**, et **aucune
+température dans le HTML** — les valeurs sont des tirets remplis par JavaScript,
+et les consignes de sécurité vivent dans un dialogue `hidden`.
+
+Deux corrections, dans cet ordre d'importance :
+
+**Une section rédigée**, sous l'app plutôt que dedans : l'écran de préparation
+reste nu, et le texte qui rend le site trouvable vit plus bas, pour qui descend.
+Elle répond aux questions réellement posées — la température du jour lieu par
+lieu, combien de temps rester, comment entrer, où se baigner — et porte le `<h1>`
+qui manquait. **125 → 823 mots.**
+
+**Le préremplissage en CI** (`tools/prerender-seo.mjs`). Google exécute le
+JavaScript, mais tard et sans garantie, alors que les valeurs sont déjà connues au
+moment de la publication. Le script les inscrit dans `index.html` entre des
+marqueurs `<!-- prerender:… -->`, et met à jour le `lastmod` du sitemap. Il ne
+touche qu'à l'intérieur des marqueurs, ne peut donc pas abîmer la page, et il est
+idempotent.
+
+Le dépôt garde des **tirets**, pas des valeurs : si le préremplissage échoue, un
+robot voit une absence plutôt qu'un chiffre périmé, et `renderTempsList()` sert
+les vrais visiteurs comme avant. Un `FAQPage` en JSON-LD reprend **mot pour mot**
+les questions visibles — Google rejette, à juste titre, un balisage qui décrit un
+contenu absent de la page.
+
+### Ce qui reste à faire, et son risque
+
+Le levier suivant serait une **page par lieu** (`/vevey`, `/lausanne`…), la façon
+habituelle de se placer sur « température eau Lausanne ». Elle n'est pas faite,
+et volontairement : dix pages qui ne diffèrent que par un chiffre sont du contenu
+mince, ce que Google sanctionne. Il faudrait à chacune un texte propre et
+défendable — position sur le lac, rive, station la plus proche et sa distance —
+avant que l'opération soit un gain plutôt qu'un risque.
+
 Deux points valent d'être connus avant de toucher à ces balises :
 
 - **les URL absolues sont obligatoires** dans `canonical`, `og:url`, `og:image`,
@@ -274,6 +312,7 @@ npm run check montreux        # idem pour un autre lieu
 npm run serve                 # sert le site sur http://localhost:4173
 npm run icons                 # régénère les icônes (nécessite pillow)
 npm run og                    # régénère l'image de partage (nécessite pillow)
+npm run seo                   # inscrit les valeurs dans index.html (après npm run data)
 ```
 
 L'app expose aussi un dépliant **« Diagnostic des sources »** en bas de page :
@@ -298,6 +337,7 @@ utile depuis l'iPhone lui-même, il liste les appels réussis ou échoués.
 | `tools/check-sources.mjs` | vérification des API en conditions réelles |
 | `tools/make-icons.py` | génération des icônes PNG |
 | `tools/make-og-image.py` | génération de la vignette de partage |
+| `tools/prerender-seo.mjs` | inscrit les températures dans `index.html`, en CI |
 
 `sources.js` ne touche ni au DOM ni au réseau, ce qui permet de le tester
 directement sous Node : c'est là que vit toute la logique susceptible de casser

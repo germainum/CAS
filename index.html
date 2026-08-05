@@ -79,6 +79,67 @@
 }
 </script>
 
+<!-- Questions fréquentes. Chaque paire reprend mot pour mot le texte visible en
+     bas de page : Google refuse — à juste titre — un balisage qui décrit un
+     contenu absent de la page. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "inLanguage": "fr-CH",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Quelle est la température du lac Léman aujourd'hui ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Elle figure en haut de cette page pour le lieu choisi, et lieu par lieu dans la liste ci-dessus. Les valeurs sont rafraîchies toutes les heures à partir des stations de l'OFEV et de la simulation Alplakes / Eawag."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Combien de temps rester dans une eau à 12 °C ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Douze minutes au plus, selon la règle d'une minute par degré. C'est un plafond : sortir avant est toujours possible, et souvent plus sage."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Le bain froid dans le Léman est-il dangereux ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Le risque principal est le choc thermique, qui coupe la respiration dans les premières secondes, puis la perte de chaleur, qui fatigue sans prévenir. Ne jamais se baigner seul, entrer progressivement, rester près du bord et sortir au premier tremblement violent réduisent l'essentiel du risque. Un problème cardiaque ou de tension demande un avis médical."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Où l'eau du Léman est-elle la plus chaude ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Le plus souvent dans le Petit-Lac, du côté de Genève : le Haut-Lac, alimenté par le Rhône glaciaire, reste plus froid. L'écart atteint couramment deux degrés entre les deux extrémités du lac."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "L'app fonctionne-t-elle hors ligne ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Oui. Une fois ajoutée à l'écran d'accueil, elle s'ouvre sans réseau et affiche la dernière température connue, en indiquant son âge. Le minuteur et la respiration guidée fonctionnent sans connexion."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Faut-il un compte ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Non. Aucun compte, aucune inscription, aucune publicité. Le journal des immersions reste sur l'appareil."
+      }
+    }
+  ]
+}
+</script>
+
 <link rel="stylesheet" href="app.css">
 </head>
 <body data-band="unknown">
@@ -180,6 +241,156 @@
         <span class="key"></span>simulé<span class="key key-future"></span>prévision
       </p>
     </div>
+  </section>
+
+  <!-- Contenu rédigé, sous l'app plutôt que dedans : l'écran de préparation
+       reste nu, et un moteur de recherche trouve enfin autre chose que des
+       libellés de boutons. Les valeurs entre les marqueurs `prerender` sont
+       écrites par la CI (tools/prerender-seo.mjs) : sans elles, un robot ne voit
+       que des tirets, puisque tout le reste arrive par JavaScript. -->
+  <section class="block prose">
+    <h1>Température de l'eau du lac Léman</h1>
+
+    <p>
+      La température de l'eau du Léman, relevée en dix lieux des deux rives, et
+      la durée d'immersion qui en découle&nbsp;: <b>une minute par degré</b>.
+      Les valeurs viennent des stations officielles de l'OFEV lorsqu'elles
+      publient une température, et de la simulation
+      <a href="https://www.alplakes.eawag.ch/" target="_blank" rel="noopener">Alplakes&nbsp;/&nbsp;Eawag</a>
+      partout ailleurs — un modèle 3D du lac, lu à un mètre sous la surface.
+      Elles sont rafraîchies toutes les heures.
+    </p>
+
+    <h2 id="aujourdhui">La température du Léman aujourd'hui, lieu par lieu</h2>
+
+    <ul class="temps" id="tempsList">
+      <!-- prerender:temps -->
+      <li><span>Genève</span><b>—</b></li>
+      <li><span>Nyon</span><b>—</b></li>
+      <li><span>Morges</span><b>—</b></li>
+      <li><span>Lausanne</span><b>—</b></li>
+      <li><span>Vevey</span><b>—</b></li>
+      <li><span>Montreux</span><b>—</b></li>
+      <li><span>Le Bouveret</span><b>—</b></li>
+      <li><span>Évian</span><b>—</b></li>
+      <li><span>Thonon</span><b>—</b></li>
+      <li><span>Yvoire</span><b>—</b></li>
+      <!-- /prerender:temps -->
+    </ul>
+
+    <p class="temps-stamp">
+      <!-- prerender:stamp -->Valeurs chargées à l'ouverture de la page.<!-- /prerender:stamp -->
+    </p>
+
+    <p>
+      Ces dix valeurs sont comparables entre elles, car toutes issues du même
+      modèle. Le grand chiffre en haut de page peut différer&nbsp;: il privilégie
+      une <b>mesure</b> officielle quand une station se trouve à moins de douze
+      kilomètres et date de moins de six heures. Une mesure vaut mieux qu'une
+      simulation, même au prix d'une petite incohérence apparente.
+    </p>
+
+    <h2 id="duree">Combien de temps rester dans l'eau froide&nbsp;?</h2>
+
+    <p>
+      La règle d'usage est d'<b>une minute par degré</b>. C'est un plafond, pas un
+      objectif&nbsp;: sortir plus tôt est toujours la bonne décision. Au-delà de
+      18&nbsp;°C la règle perd son sens — ce n'est plus un bain froid — d'où le
+      plafonnement à vingt minutes.
+    </p>
+
+    <ul class="duree-list">
+      <li><b>6&nbsp;°C</b><span>6 minutes au plus</span></li>
+      <li><b>10&nbsp;°C</b><span>10 minutes au plus</span></li>
+      <li><b>14&nbsp;°C</b><span>14 minutes au plus</span></li>
+      <li><b>18&nbsp;°C</b><span>18 minutes au plus</span></li>
+    </ul>
+
+    <p>
+      Ces durées supposent une eau calme, une sortie facile et quelqu'un à vos
+      côtés. Le froid fatigue sans prévenir&nbsp;: la même eau ne se traverse pas
+      de la même façon selon le sommeil, le repas ou la saison.
+    </p>
+
+    <h2 id="entrer">Comment entrer dans l'eau froide</h2>
+
+    <p>
+      <b>Jamais seul</b>, et jamais la tête la première. On entre
+      progressivement, on laisse le souffle se couper puis revenir — les cinq
+      premières secondes sont les plus dures —, et l'on garde de longues
+      expirations, qui calment la réponse au choc thermique. Un bonnet limite la
+      perte de chaleur.
+    </p>
+
+    <p>
+      On reste à portée du bord, et l'on sort à la moindre euphorie inhabituelle
+      ou au premier tremblement violent. En cas de problème cardiaque ou de
+      tension, un avis médical passe avant tout le reste. L'app affiche ces
+      consignes juste avant l'immersion, puis guide la respiration pendant.
+    </p>
+
+    <h2 id="ou">Où se baigner dans le Léman</h2>
+
+    <p>
+      Les dix points suivis couvrent le lac d'un bout à l'autre&nbsp;: le
+      Petit-Lac de <b>Genève</b> à <b>Yvoire</b>, le Grand-Lac de <b>Nyon</b> et
+      <b>Thonon</b> à <b>Lausanne</b> et <b>Évian</b>, et le Haut-Lac de
+      <b>Vevey</b> au <b>Bouveret</b> en passant par <b>Montreux</b>. Rive suisse
+      et rive française y sont représentées.
+    </p>
+
+    <p>
+      L'écart entre les deux extrémités atteint couramment deux degrés&nbsp;: le
+      Haut-Lac, alimenté par le Rhône glaciaire, reste plus froid que le
+      Petit-Lac. C'est une raison de comparer avant de choisir son lieu — la
+      carte plus haut le montre d'un coup d'œil.
+    </p>
+
+    <h2 id="faq">Questions fréquentes</h2>
+
+    <dl class="faq">
+      <dt>Quelle est la température du lac Léman aujourd'hui&nbsp;?</dt>
+      <dd>
+        Elle figure en haut de cette page pour le lieu choisi, et lieu par lieu
+        dans la liste ci-dessus. Les valeurs sont rafraîchies toutes les heures à
+        partir des stations de l'OFEV et de la simulation Alplakes&nbsp;/&nbsp;Eawag.
+      </dd>
+
+      <dt>Combien de temps rester dans une eau à 12&nbsp;°C&nbsp;?</dt>
+      <dd>
+        Douze minutes au plus, selon la règle d'une minute par degré. C'est un
+        plafond&nbsp;: sortir avant est toujours possible, et souvent plus sage.
+      </dd>
+
+      <dt>Le bain froid dans le Léman est-il dangereux&nbsp;?</dt>
+      <dd>
+        Le risque principal est le choc thermique, qui coupe la respiration dans
+        les premières secondes, puis la perte de chaleur, qui fatigue sans
+        prévenir. Ne jamais se baigner seul, entrer progressivement, rester près
+        du bord et sortir au premier tremblement violent réduisent l'essentiel du
+        risque. Un problème cardiaque ou de tension demande un avis médical.
+      </dd>
+
+      <dt>Où l'eau du Léman est-elle la plus chaude&nbsp;?</dt>
+      <dd>
+        Le plus souvent dans le Petit-Lac, du côté de Genève&nbsp;: le Haut-Lac,
+        alimenté par le Rhône glaciaire, reste plus froid. L'écart atteint
+        couramment deux degrés entre les deux extrémités du lac.
+      </dd>
+
+      <dt>L'app fonctionne-t-elle hors ligne&nbsp;?</dt>
+      <dd>
+        Oui. Une fois ajoutée à l'écran d'accueil, elle s'ouvre sans réseau et
+        affiche la dernière température connue, en indiquant son âge. Le minuteur
+        et la respiration guidée fonctionnent sans connexion.
+      </dd>
+
+      <dt>Faut-il un compte&nbsp;?</dt>
+      <dd>
+        Non. Aucun compte, aucune inscription, aucune publicité. Le journal des
+        immersions reste sur l'appareil.
+      </dd>
+    </dl>
   </section>
 
   <!-- Soutien : en filet plutôt qu'en violet plein, pour ne pas entrer en

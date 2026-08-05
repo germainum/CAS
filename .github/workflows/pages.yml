@@ -68,6 +68,15 @@ jobs:
       - name: Précalcule les séries du modèle
         continue-on-error: true
         run: node tools/build-model-data.mjs
+
+      # Inscrit les températures du jour dans index.html. Sans ce passage, un
+      # robot d'indexation ne voit que des tirets : les valeurs arrivent par
+      # JavaScript. L'échec est toléré — la page garde alors ses tirets, et le
+      # JavaScript sert les vrais visiteurs comme avant.
+      - name: Inscrit les valeurs dans la page
+        continue-on-error: true
+        run: node tools/prerender-seo.mjs
+
       # Le site est statique : la racine du dépôt est publiée telle quelle.
       - uses: actions/upload-pages-artifact@v3
         with:
