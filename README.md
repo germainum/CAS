@@ -9,6 +9,8 @@ ligne avec la dernière valeur connue.
 Aucun compte, aucune clé d'API, aucun paquet à installer : des fichiers statiques et
 un instantané de données produit par la CI.
 
+En ligne : **https://germainum.github.io/CAS/**
+
 ## Installation sur iPhone
 
 1. Publiez le site (voir « Déploiement » ci-dessous) — Safari exige HTTPS pour
@@ -153,6 +155,34 @@ la température d'un lac varie de moins d'un demi-degré par heure. Trois garde-
 `data/model.json` n'est pas versionné : c'est un produit de compilation. Pour le
 générer en local, `npm run data`.
 
+## Référencement et partage
+
+Le `<head>` porte un titre orienté recherche (« Température du Léman — Bain froid
+en direct »), une description, l'URL canonique, les balises **Open Graph** et
+**Twitter Card**, et un bloc **JSON-LD** de type `WebApplication` — sans quoi
+Google prend une app pour un article de blog. `robots.txt` et `sitemap.xml`
+complètent l'ensemble.
+
+Deux points valent d'être connus avant de toucher à ces balises :
+
+- **les URL absolues sont obligatoires** dans `canonical`, `og:url` et
+  `og:image` : les robots des réseaux sociaux ne résolvent pas les chemins
+  relatifs. Elles sont donc écrites en dur, et **contiennent le sous-dossier**
+  (`https://germainum.github.io/CAS/`), car le site n'est pas à la racine d'un
+  domaine. Un chemin en `/manifest.json` ou `/icons/…` pointerait hors du site
+  et renverrait 404 ;
+- **`og-image.png` doit exister**. Une balise `og:image` qui pointe vers un
+  fichier absent produit une carte de partage cassée, pire que pas de carte du
+  tout. Elle est générée par `npm run og` et versionnée.
+
+En cas de nom de domaine propre, il y a **cinq URL absolues** à remplacer :
+`canonical`, `og:url`, `og:image`, `twitter:image` et le `url` du JSON-LD dans
+`index.html`, plus le `Sitemap:` de `robots.txt` et le `<loc>` de `sitemap.xml`.
+
+Tout le reste du site utilise des chemins relatifs (`./`, `icons/…`), y compris
+`start_url` et `scope` du manifest : c'est ce qui permet de le publier sous
+n'importe quel sous-dossier sans rien modifier.
+
 ## Développement
 
 ```bash
@@ -162,6 +192,7 @@ npm run check                 # interroge les API réelles et diagnostique
 npm run check montreux        # idem pour un autre lieu
 npm run serve                 # sert le site sur http://localhost:4173
 npm run icons                 # régénère les icônes (nécessite pillow)
+npm run og                    # régénère l'image de partage (nécessite pillow)
 ```
 
 L'app expose aussi un dépliant **« Diagnostic des sources »** en bas de page :
@@ -179,10 +210,13 @@ utile depuis l'iPhone lui-même, il liste les appels réussis ou échoués.
 | `lakemap.js` | carte du lac : silhouette, points, températures |
 | `sw.js` | service worker : réseau d'abord, cache en secours |
 | `manifest.webmanifest` | nom, icônes, mode plein écran |
+| `robots.txt`, `sitemap.xml` | référencement : autorisation et URL canonique |
+| `og-image.png` | vignette de partage, 1200 × 630 |
 | `tools/build-model-data.mjs` | précalcul de `data/model.json` dans la CI |
 | `tools/test-parsers.mjs` | 86 tests sur `sources.js` |
 | `tools/check-sources.mjs` | vérification des API en conditions réelles |
 | `tools/make-icons.py` | génération des icônes PNG |
+| `tools/make-og-image.py` | génération de la vignette de partage |
 
 `sources.js` ne touche ni au DOM ni au réseau, ce qui permet de le tester
 directement sous Node : c'est là que vit toute la logique susceptible de casser

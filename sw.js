@@ -3,7 +3,7 @@
 // modèle. Les API externes passent directement par le réseau, et leurs données
 // sont mises en cache côté application (localStorage), avec leur horodatage.
 
-const CACHE = 'leman-shell-v8';
+const CACHE = 'leman-shell-v9';
 
 const SHELL = [
   './',
@@ -19,7 +19,11 @@ const SHELL = [
   'icons/icon-512.png',
   'icons/icon-maskable-512.png',
   'icons/favicon-32.png',
+  'icons/favicon-16.png',
 ];
+// og-image.png reste hors de la coque : elle ne sert qu'aux robots des réseaux
+// sociaux, qui n'utilisent pas le service worker. La mettre en cache coûterait
+// 77 ko sur l'appareil pour une image que l'utilisateur ne verra jamais.
 
 self.addEventListener('install', (event) => {
   event.waitUntil(

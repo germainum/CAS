@@ -1,22 +1,82 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr-CH">
 <head>
 <meta charset="utf-8">
-<title>Bains Froids Léman</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="La température du lac, et le souffle pour y entrer.">
 
+<!-- Référencement. Les URL absolues sont obligatoires ici : les robots des
+     réseaux sociaux ne résolvent pas les chemins relatifs. Le site vit dans un
+     sous-dossier (/CAS/) et non à la racine du domaine — d'où le chemin complet
+     dans chaque URL, et des chemins relatifs partout ailleurs. -->
+<title>Température du Léman — Bain froid en direct | Combien de temps rester</title>
+<meta name="description"
+      content="La température de l'eau du Léman en temps réel et la durée idéale de votre bain froid : 1 minute par degré. Respirez, puis entrez.">
+<link rel="canonical" href="https://germainum.github.io/CAS/">
+
+<!-- Deux couleurs plutôt qu'une : la barre d'état d'iOS suit le haut de la page,
+     lilas en clair et sombre en sombre. Une teinte unique jurerait dans l'un des
+     deux thèmes. -->
 <meta name="theme-color" content="#ece7fe" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#13131d" media="(prefers-color-scheme: dark)">
 <meta name="color-scheme" content="light dark">
 
+<!-- Open Graph : WhatsApp, Facebook, LinkedIn -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Bains Froids Léman">
+<meta property="og:title" content="Température du Léman — Bain froid en direct">
+<meta property="og:description"
+      content="L'eau du Léman en temps réel et la durée idéale de ton bain froid. Respire, puis entre.">
+<meta property="og:url" content="https://germainum.github.io/CAS/">
+<meta property="og:image" content="https://germainum.github.io/CAS/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Bains Froids Léman — la température du lac, et le souffle pour y entrer.">
+<meta property="og:locale" content="fr_CH">
+
+<!-- Twitter / X -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Température du Léman — Bain froid en direct">
+<meta name="twitter:description"
+      content="L'eau du Léman en temps réel et la durée idéale de ton bain froid.">
+<meta name="twitter:image" content="https://germainum.github.io/CAS/og-image.png">
+
+<!-- PWA -->
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Léman">
+
+<!-- Icône de l'écran d'accueil iOS -->
 <link rel="apple-touch-icon" href="icons/icon-180.png">
-<link rel="icon" href="icons/favicon-32.png" sizes="32x32">
+
+<!-- Favicons -->
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
+
+<!-- Données structurées : ce qui permet à Google de comprendre qu'il s'agit
+     d'une application, et non d'un article de blog sur la baignade. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Bains Froids Léman",
+  "url": "https://germainum.github.io/CAS/",
+  "description": "La température de l'eau du lac Léman en temps réel et la durée conseillée d'un bain froid : une minute par degré.",
+  "applicationCategory": "HealthApplication",
+  "operatingSystem": "iOS, Android, navigateur web",
+  "inLanguage": "fr-CH",
+  "isAccessibleForFree": true,
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "CHF" },
+  "featureList": [
+    "Température de l'eau du Léman en dix lieux",
+    "Durée conseillée du bain froid, une minute par degré",
+    "Minuteur avec respiration guidée et consignes de sécurité",
+    "Carte du lac et prévision sur sept jours"
+  ],
+  "about": { "@type": "BodyOfWater", "name": "Lac Léman" }
+}
+</script>
 
 <link rel="stylesheet" href="app.css">
 </head>

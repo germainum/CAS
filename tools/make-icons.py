@@ -98,6 +98,7 @@ def main():
         ("icon-192.png", standard, 192),
         ("icon-180.png", standard, 180),
         ("favicon-32.png", standard, 32),
+        ("favicon-16.png", standard, 16),
         ("icon-maskable-512.png", maskable, 512),
     ]:
         src.resize((size, size), Image.LANCZOS).save(os.path.join(OUT, name), optimize=True)

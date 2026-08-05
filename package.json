@@ -1,14 +1,15 @@
 {
-  "name": "temperature-leman",
+  "name": "bains-froids-leman",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "PWA affichant la température de l'eau du lac Léman.",
+  "description": "PWA : la température du lac Léman, et le souffle pour y entrer.",
   "scripts": {
     "test": "node tools/test-parsers.mjs",
     "data": "node tools/build-model-data.mjs",
     "check": "node tools/check-sources.mjs",
     "icons": "python3 tools/make-icons.py",
+    "og": "python3 tools/make-og-image.py",
     "serve": "python3 -m http.server 4173"
   },
   "license": "MIT"
