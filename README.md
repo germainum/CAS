@@ -9,7 +9,7 @@ ligne avec la dernière valeur connue.
 Aucun compte, aucune clé d'API, aucun paquet à installer : des fichiers statiques et
 un instantané de données produit par la CI.
 
-En ligne : **https://bainsfroidstemps.ch/**
+En ligne : **https://bainfroidtemps.ch/**
 
 ## Installation sur iPhone
 
@@ -184,12 +184,30 @@ d'entre eux.
 
 ### Changer de domaine
 
-Sept valeurs portent l'adresse en dur — cinq dans `index.html` (`canonical`,
+Huit valeurs portent l'adresse en dur — cinq dans `index.html` (`canonical`,
 `og:url`, `og:image`, `twitter:image`, `url` du JSON-LD), le `Sitemap:` de
-`robots.txt` et le `<loc>` de `sitemap.xml`. Le fichier `CNAME` déclare le
-domaine au dépôt ; côté GitHub, il se règle dans *Settings → Pages → Custom
-domain*, et **« Enforce HTTPS »** doit être coché dès que le certificat est
-délivré — Safari exige HTTPS pour installer une PWA.
+`robots.txt`, le `<loc>` de `sitemap.xml` et le fichier `CNAME`. Ce dernier doit
+correspondre au champ *Settings → Pages → Custom domain* : un désaccord entre les
+deux ne casse rien avec un déploiement par Actions, où le réglage fait autorité,
+mais rend le dépôt trompeur.
+
+Côté registraire, un domaine apex chez GitHub Pages demande quatre
+enregistrements **A** (et, si l'on veut IPv6, quatre **AAAA**) :
+
+```
+A     @      185.199.108.153
+A     @      185.199.109.153
+A     @      185.199.110.153
+A     @      185.199.111.153
+CNAME www    germainum.github.io.
+```
+
+Deux vérifications valent mieux qu'une supposition : `Custom domain` dit ce que
+GitHub attend, le DNS dit où le nom pointe réellement. Tant que le second ne
+répond pas, le site reste injoignable même si le premier est correct.
+
+Enfin, **« Enforce HTTPS »** doit être coché dès que le certificat est délivré :
+Safari exige HTTPS pour installer une PWA.
 
 ## Développement
 
