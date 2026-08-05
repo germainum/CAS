@@ -9,7 +9,7 @@ ligne avec la dernière valeur connue.
 Aucun compte, aucune clé d'API, aucun paquet à installer : des fichiers statiques et
 un instantané de données produit par la CI.
 
-En ligne : **https://germainum.github.io/CAS/**
+En ligne : **https://bainsfroidstemps.ch/**
 
 ## Installation sur iPhone
 
@@ -170,23 +170,26 @@ complètent l'ensemble.
 
 Deux points valent d'être connus avant de toucher à ces balises :
 
-- **les URL absolues sont obligatoires** dans `canonical`, `og:url` et
-  `og:image` : les robots des réseaux sociaux ne résolvent pas les chemins
-  relatifs. Elles sont donc écrites en dur, et **contiennent le sous-dossier**
-  (`https://germainum.github.io/CAS/`), car le site n'est pas à la racine d'un
-  domaine. Un chemin en `/manifest.json` ou `/icons/…` pointerait hors du site
-  et renverrait 404 ;
+- **les URL absolues sont obligatoires** dans `canonical`, `og:url`, `og:image`,
+  `twitter:image` et le `url` du JSON-LD : les robots des réseaux sociaux ne
+  résolvent pas les chemins relatifs. Elles sont donc écrites en dur ;
 - **`og-image.png` doit exister**. Une balise `og:image` qui pointe vers un
   fichier absent produit une carte de partage cassée, pire que pas de carte du
   tout. Elle est générée par `npm run og` et versionnée.
 
-En cas de nom de domaine propre, il y a **cinq URL absolues** à remplacer :
-`canonical`, `og:url`, `og:image`, `twitter:image` et le `url` du JSON-LD dans
-`index.html`, plus le `Sitemap:` de `robots.txt` et le `<loc>` de `sitemap.xml`.
+Tout le reste du site utilise des **chemins relatifs** (`./`, `icons/…`), y
+compris `start_url` et `scope` du manifest. C'est ce qui a permis de passer du
+sous-dossier `germainum.github.io/CAS/` au domaine propre sans toucher à un seul
+d'entre eux.
 
-Tout le reste du site utilise des chemins relatifs (`./`, `icons/…`), y compris
-`start_url` et `scope` du manifest : c'est ce qui permet de le publier sous
-n'importe quel sous-dossier sans rien modifier.
+### Changer de domaine
+
+Sept valeurs portent l'adresse en dur — cinq dans `index.html` (`canonical`,
+`og:url`, `og:image`, `twitter:image`, `url` du JSON-LD), le `Sitemap:` de
+`robots.txt` et le `<loc>` de `sitemap.xml`. Le fichier `CNAME` déclare le
+domaine au dépôt ; côté GitHub, il se règle dans *Settings → Pages → Custom
+domain*, et **« Enforce HTTPS »** doit être coché dès que le certificat est
+délivré — Safari exige HTTPS pour installer une PWA.
 
 ## Développement
 
